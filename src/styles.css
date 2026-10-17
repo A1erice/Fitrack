@@ -281,10 +281,12 @@ html:has(.app-main.page-home),html:has(.app-main.page-watchlist),html:has(.app-m
 @media (max-width:600px){
   .page-home .shelf-card{width:136px!important;min-width:136px!important}
   .page-home .shelf-poster{width:136px!important;height:184px!important}
-  .page-home .search-results .row-poster,.page-lists .list-stack .row-poster{width:76px!important;height:104px!important;flex:none}
-  .page-home .search-results .movie-row,.page-lists .list-stack .movie-row{min-height:120px!important;gap:12px}
-  .page-watchlist .quest-row-main .movie-row{min-height:120px!important;padding-top:10px;padding-bottom:10px}
-  .page-watchlist .quest-row-main .row-poster{width:76px!important;height:100px!important;flex:none}
+  .page-home .search-results .row-poster,.page-lists .list-stack .row-poster{width:82px!important;height:112px!important;min-width:82px!important;flex:0 0 82px!important}
+  .page-home .search-results .movie-row,.page-lists .list-stack .movie-row{min-height:130px!important;gap:12px}
+  .page-lists .list-stack .has-actions>.movie-row{gap:8px}
+  .page-watchlist .quest-row-main .movie-row{min-height:130px!important;padding:9px 74px 9px 9px}
+  .page-watchlist .quest-row-main .row-poster{width:82px!important;height:108px!important;min-width:82px!important;flex:0 0 82px!important}
+  .page-home .search-results .without-genre-icon .poster-genre,.page-lists .list-stack .without-genre-icon .poster-genre,.page-watchlist .without-genre-icon .poster-genre{display:none!important}
 }
 .poster-genre{width:auto!important;height:auto!important;min-width:0!important;min-height:0!important;padding:0!important;border:0!important;border-radius:0!important;background:transparent!important;color:#fff!important;font-size:23px!important;line-height:1!important;text-shadow:0 2px 6px #211536aa;box-shadow:none!important}
 .poster-genre::before,.poster-genre::after{display:none!important;content:none!important}
