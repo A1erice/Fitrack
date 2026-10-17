@@ -144,8 +144,18 @@ html,body,button{-webkit-tap-highlight-color:transparent}
 .collection-detail-heading{align-items:flex-end;gap:8px;margin-bottom:14px}
 .collection-header-actions{display:flex;align-items:center;gap:6px;flex:none;padding-bottom:1px}
 .collection-header-actions>span{font-size:10px;color:#8f8499;white-space:nowrap}
+.collection-header-actions .collection-reload-button{width:32px;height:32px;display:grid;place-items:center;border:1px solid #e9e1f1;border-radius:10px;background:#fffdf9;color:#795fa1;flex:none}
+.collection-header-actions .collection-reload-button:disabled{opacity:.55}
 .collection-header-actions .add-all-button{margin:0;font-size:9px;padding:8px 9px}
 .page-lists .list-stack{padding-bottom:8px}
+.collection-refresh-status{display:flex;align-items:center;justify-content:center;gap:8px;padding:12px;color:#7355a8;font-size:12px;font-weight:650}
+.collection-pull-indicator{position:sticky;top:0;z-index:5;display:flex;flex:0 0 auto;align-items:center;justify-content:center;gap:8px;overflow:hidden;color:#795fa1;font-size:11px;font-weight:700;transition:height .12s ease,opacity .12s ease,background-color .16s ease}
+.collection-pull-indicator.ready{background:linear-gradient(90deg,transparent,#f3edfb,transparent);color:#62438f}
+.collection-pull-indicator svg{transition:transform .1s linear}
+.home-pull-indicator{position:sticky;top:0;z-index:5;display:flex;flex:0 0 auto;align-items:center;justify-content:center;gap:8px;overflow:hidden;border-radius:0 0 12px 12px;background:#fbf9fddd;color:#795fa1;font-size:11px;font-weight:700;transition:height .12s ease,opacity .12s ease,background-color .16s ease}
+.home-pull-indicator.ready{background:#f0e8fb;color:#62438f}
+.home-pull-indicator svg{transition:transform .1s linear}
+.collection-pull-hint{padding:8px 0 3px;text-align:center;color:#8d819f;font-size:10px;letter-spacing:.02em}
 
 /* Lock these phone screens to the viewport; only the content lists may scroll */
 .app-shell:has(.app-main.page-home),.app-shell:has(.app-main.page-watchlist),.app-shell:has(.app-main.page-lists){height:100dvh;min-height:0;overflow:hidden}
@@ -408,3 +418,11 @@ html:has(.app-main.page-home),html:has(.app-main.page-watchlist),html:has(.app-m
 .provider-settings-actions button:disabled{opacity:.6}
 @media(min-width:700px){.account-actions-backdrop{align-items:flex-end}.account-actions-sheet{border-radius:25px 25px 0 0}}
 .account-avatar-image{display:block;width:100%;height:100%;border-radius:inherit;object-fit:cover}
+
+.movie-modal .gallery-dots{bottom:22px}
+.form-modal{align-self:flex-start;margin-top:8dvh}
+
+.form-modal{align-self:flex-start;margin-top:6dvh}
+@media(max-height:700px){.form-modal{margin-top:2dvh}}
+
+.movie-modal .modal-actions{position:sticky;bottom:0;z-index:4;margin:18px -2px -2px;padding:12px 2px calc(10px + env(safe-area-inset-bottom));background:linear-gradient(180deg,transparent,#fffdf9 24%)}
