@@ -49,7 +49,28 @@ html:has(.app-main.page-discover),body:has(.app-main.page-discover),.app-shell:h
 /* Match the translucent iOS status area to Fitrack's purple on installed PWAs */
 @media (display-mode: standalone){
   html,body,#root,.app-shell{min-height:100%;background:#8e70c7}
-  .app-main{background:linear-gradient(to bottom,#8e70c7 0,#8e70c7 calc(env(safe-area-inset-top) + 10px),rgba(255,253,255,.64) calc(env(safe-area-inset-top) + 10px))}
+  .app-main{background:rgba(255,253,255,.64)}
+}
+
+/* Final sizing overrides must come after the legacy mobile rules above */
+.page-home .shelf-card{width:136px!important;min-width:136px!important}
+.page-home .shelf-poster{width:136px!important;height:184px!important}
+.page-home .search-results .row-poster{width:76px!important;height:104px!important}
+.page-lists .list-stack .row-poster{width:76px!important;height:104px!important}
+.page-lists .list-stack .movie-row{min-height:120px!important;gap:12px}
+.page-watchlist .quest-row-main .movie-row{min-height:120px!important;padding-top:10px;padding-bottom:10px}
+.page-watchlist .quest-row-main .row-poster{width:76px!important;height:100px!important}
+.poster-genre{display:flex;align-items:center;justify-content:center;min-width:25px;min-height:25px;padding:4px;border-radius:9px;background:#4e3b65e8;border:1px solid #ffffffbd;color:#fff;font-size:15px;line-height:1;box-shadow:0 2px 7px #21153645}
+.poster-genre:empty{display:none}
+.page-discover .discover-card{position:relative;border:3px solid #8e70c7;border-radius:25px;box-shadow:0 0 0 2px #ffffff,0 12px 28px #49346838;overflow:hidden;background:#d9cbea}
+.page-discover .discover-poster{inset:0;border-radius:20px}
+
+/* iOS standalone apps respect this solid system status bar color */
+@supports (-webkit-touch-callout:none){
+  @media (display-mode:standalone){
+    html,body,#root,.app-shell{background:#8e70c7!important}
+    .app-main{background:rgba(255,253,255,.64)}
+  }
 }
 .collection-overview .collection-tile-icon{position:absolute;inset:-10%;z-index:-1;width:120%;height:120%;display:grid;place-items:center;transform:rotate(30deg);font-size:clamp(92px,34vw,155px);line-height:1;opacity:.12;pointer-events:none;border-radius:0;background:transparent!important;box-shadow:none!important}
 .collection-overview .collection-open>strong,.collection-overview .collection-open>small{align-self:flex-start;position:relative;z-index:1;text-shadow:0 1px 4px #fff9}
@@ -255,3 +276,15 @@ html:has(.app-main.page-home),html:has(.app-main.page-watchlist),html:has(.app-m
 .release-entry ul{display:flex;flex-direction:column;gap:7px;margin:12px 0 0;padding-left:17px;color:#70677b;font-size:11px;line-height:1.45}
 .release-entry li::marker{color:#9474c7}
 .about-footer{display:block;margin-top:18px;color:#93899b;font-size:10px;text-align:center}
+
+/* Keep the poster dimensions large on narrow phone screens too */
+@media (max-width:600px){
+  .page-home .shelf-card{width:136px!important;min-width:136px!important}
+  .page-home .shelf-poster{width:136px!important;height:184px!important}
+  .page-home .search-results .row-poster,.page-lists .list-stack .row-poster{width:76px!important;height:104px!important;flex:none}
+  .page-home .search-results .movie-row,.page-lists .list-stack .movie-row{min-height:120px!important;gap:12px}
+  .page-watchlist .quest-row-main .movie-row{min-height:120px!important;padding-top:10px;padding-bottom:10px}
+  .page-watchlist .quest-row-main .row-poster{width:76px!important;height:100px!important;flex:none}
+}
+.poster-genre{width:auto!important;height:auto!important;min-width:0!important;min-height:0!important;padding:0!important;border:0!important;border-radius:0!important;background:transparent!important;color:#fff!important;font-size:23px!important;line-height:1!important;text-shadow:0 2px 6px #211536aa;box-shadow:none!important}
+.poster-genre::before,.poster-genre::after{display:none!important;content:none!important}
