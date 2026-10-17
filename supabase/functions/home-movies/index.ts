@@ -19,6 +19,68 @@ Deno.serve(async (request: Request) => {
   try {
     const body = await request.json().catch(() => ({}));
     const action = body?.action;
+    if (action === "movie-detail") {
+      let movieId = parseTmdbMovieId(body.movieId);
+      if (!movieId && typeof body.title === "string" && body.title.trim()) {
+        const title = body.title.trim().slice(0, 100);
+        const year = Number(body.year);
+        const search = await tmdb(`/search/movie?query=${encodeURIComponent(title)}&include_adult=false&language=en-US&page=1${Number.isInteger(year) && year > 1800 ? `&year=${year}` : ""}`, token);
+        const exactMatches = (search.results ?? []).filter((result: any) => normalizeTitle(result.title ?? result.original_title ?? "") === normalizeTitle(title));
+        const match = exactMatches.find((result: any) => !Number.isInteger(year) || !result.release_date || Number(result.release_date.slice(0, 4)) === year) ?? exactMatches[0];
+        movieId = parseTmdbMovieId(match?.id);
+      }
+      if (!movieId) return respond({ error: "Could not match this title to a TMDB movie." }, 404);
+      const region = validRegion(body.region);
+      const today = new Date().toISOString().slice(0, 10);
+      const selectedCatalogs = Array.isArray(body.services)
+        ? [...new Set(body.services.filter((service: unknown): service is string => typeof service === "string").slice(0, 12).map((service: string) => serviceCatalogs[service]).filter(Boolean))].sort()
+        : [];
+      const availabilityKey = Deno.env.get("STREAMING_AVAILABILITY_API_KEY");
+      const omdbKey = Deno.env.get("OMDB_API_KEY");
+      const suppliedExpiry = body.isExpiring === true && typeof body.expiryAt === "string" && Number.isFinite(Date.parse(body.expiryAt))
+        ? { expiryAt: new Date(body.expiryAt).toISOString(), service: typeof body.expiryService === "string" ? body.expiryService.slice(0, 60) : "" }
+        : null;
+      const cacheKey = `movie-detail-v2:${region}:${movieId}:${selectedCatalogs.join(",")}:${omdbKey ? "imdb" : "no-imdb"}`;
+      const cached = await readDailyCache(cacheKey, today).catch((error) => {
+        console.error("daily movie-detail cache read failed", error);
+        return null;
+      });
+      if (cached) return respond({ ...cached, cacheHit: true });
+      const [detail, watchProviders, movieNight] = await Promise.all([
+        tmdb(`/movie/${movieId}?language=en-US&append_to_response=images,videos,credits&include_image_language=en,null`, token),
+        tmdb(`/movie/${movieId}/watch/providers`, token),
+        availabilityKey && selectedCatalogs.length && !suppliedExpiry ? fetchMovieNightDetails(movieId, region, availabilityKey) : Promise.resolve(null),
+      ]);
+      const backdrops = (detail.images?.backdrops ?? []).filter((image: any) => image.file_path).slice(0, 12)
+        .map((image: any) => `https://image.tmdb.org/t/p/w1280${image.file_path}`);
+      const videos = detail.videos?.results ?? [];
+      const trailer = videos.find((video: any) => video.site === "YouTube" && video.type === "Trailer" && video.official)
+        ?? videos.find((video: any) => video.site === "YouTube" && video.type === "Trailer")
+        ?? videos.find((video: any) => video.site === "YouTube" && video.type === "Teaser");
+      const regionProviders = watchProviders.results?.[region];
+      const providers = [...(regionProviders?.flatrate ?? []), ...(regionProviders?.free ?? []), ...(regionProviders?.ads ?? [])]
+        .filter((provider: any, index: number, items: any[]) => items.findIndex((item) => item.provider_id === provider.provider_id) === index)
+        .map((provider: any) => ({ id: provider.provider_id, name: provider.provider_name, logo: provider.logo_path ? `https://image.tmdb.org/t/p/w92${provider.logo_path}` : "" }));
+      const expiry = suppliedExpiry ?? findSelectedServiceExpiry(movieNight?.streamingOptions?.[region.toLowerCase()], selectedCatalogs);
+      const imdbId = typeof movieNight?.imdbId === "string" ? movieNight.imdbId : detail.imdb_id ?? "";
+      const imdbRating = omdbKey && imdbId ? await fetchImdbRating(imdbId, omdbKey) : "";
+      const payload = {
+        id: detail.id, title: detail.title ?? "", year: detail.release_date ? Number(detail.release_date.slice(0, 4)) : "",
+        poster: detail.poster_path ? `https://image.tmdb.org/t/p/w780${detail.poster_path}` : "",
+        overview: detail.overview ?? "", runtime: detail.runtime ? `${Math.floor(detail.runtime / 60)}h ${detail.runtime % 60}m` : "See details",
+        rating: Number(detail.vote_average || 0).toFixed(1), ratingLabel: "TMDB", imdbId,
+        imdbUrl: imdbId ? `https://www.imdb.com/title/${encodeURIComponent(imdbId)}/` : "", imdbRating,
+        genres: (detail.genres ?? []).map((genre: any) => genre.name),
+        backdrops,
+        trailer: trailer ? { key: trailer.key, name: trailer.name ?? "Official trailer" } : null,
+        cast: (detail.credits?.cast ?? []).filter((person: any) => person.name).slice(0, 14).map((person: any) => ({
+          id: person.id, name: person.name, character: person.character ?? "", profile: person.profile_path ? `https://image.tmdb.org/t/p/w185${person.profile_path}` : "",
+        })),
+        providers, providerRegion: region, expiryAt: expiry?.expiryAt ?? null, expiryService: expiry?.service ?? "",
+      };
+      await writeDailyCache(cacheKey, today, payload).catch((error) => console.error("daily movie-detail cache write failed", error));
+      return respond(payload);
+    }
     if (action === "search") {
       const query = typeof body.query === "string" ? body.query.trim().slice(0, 100) : "";
       if (!query) return respond({ results: [] });
@@ -213,6 +275,7 @@ function expiringMovies(payload: any, selectedCatalog: string) {
     }
     movies.set(key, {
       id: key,
+      tmdbId: parseTmdbMovieId(show.tmdbId),
       title: show.title ?? "Untitled movie",
       year: show.releaseYear ?? "",
       genre: (show.genres ?? []).map((genre: any) => typeof genre === "string" ? genre : genre.name).filter(Boolean).slice(0, 2).join(" · ") || "Movie",
@@ -247,6 +310,17 @@ function normalizeName(value: string) {
   return value.toLocaleLowerCase().replace(/[^a-z0-9]/g, "");
 }
 
+function normalizeTitle(value: string) {
+  return value.toLocaleLowerCase().normalize("NFKD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]/g, "");
+}
+
+function parseTmdbMovieId(value: unknown): number | null {
+  const match = String(value ?? "").match(/^(?:movie\/)?(\d+)$/);
+  if (!match) return null;
+  const id = Number(match[1]);
+  return Number.isSafeInteger(id) && id > 0 ? id : null;
+}
+
 function validRegion(value: unknown) {
   return typeof value === "string" && /^[A-Za-z]{2}$/.test(value) ? value.toUpperCase() : "US";
 }
@@ -257,6 +331,48 @@ async function tmdb(path: string, token: string) {
   });
   if (!response.ok) throw new Error(`TMDB returned ${response.status}`);
   return await response.json();
+}
+
+async function fetchMovieNightDetails(movieId: number, region: string, apiKey: string) {
+  try {
+    const response = await fetch(`${AVAILABILITY_API}/shows/movie/${movieId}?country=${region.toLowerCase()}`, {
+      headers: { "X-API-Key": apiKey, accept: "application/json" },
+    });
+    if (!response.ok) throw new Error(`Streaming Availability returned ${response.status}`);
+    return await response.json();
+  } catch (error) {
+    console.error("movie-night title detail lookup failed", error);
+    return null;
+  }
+}
+
+function findSelectedServiceExpiry(options: any[] | undefined, selectedCatalogs: string[]) {
+  if (!Array.isArray(options) || selectedCatalogs.length === 0) return null;
+  const now = Date.now();
+  const deadline = now + 31 * 86_400_000;
+  const matches = options.flatMap((option: any) => {
+    const serviceId = String(option.service?.id ?? "").toLowerCase();
+    const timestamp = Number(option.expiresOn);
+    const expiryMs = Number.isFinite(timestamp) && timestamp > 0 ? timestamp * 1000 : NaN;
+    if (!selectedCatalogs.includes(serviceId) || !Number.isFinite(expiryMs) || expiryMs <= now || expiryMs > deadline) return [];
+    return [{ expiryAt: new Date(expiryMs).toISOString(), service: option.service?.name ?? serviceId }];
+  });
+  return matches.sort((a, b) => a.expiryAt.localeCompare(b.expiryAt))[0] ?? null;
+}
+
+async function fetchImdbRating(imdbId: string, apiKey: string) {
+  try {
+    const url = new URL("https://www.omdbapi.com/");
+    url.searchParams.set("i", imdbId);
+    url.searchParams.set("apikey", apiKey);
+    const response = await fetch(url);
+    if (!response.ok) throw new Error(`OMDb returned ${response.status}`);
+    const data = await response.json();
+    return data.Response === "True" && data.imdbRating !== "N/A" ? String(data.imdbRating ?? "") : "";
+  } catch (error) {
+    console.error("IMDb rating lookup failed", error);
+    return "";
+  }
 }
 
 function respond(body: unknown, status = 200) {

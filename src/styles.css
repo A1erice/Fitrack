@@ -260,6 +260,33 @@ html:has(.app-main.page-home),html:has(.app-main.page-watchlist),html:has(.app-m
 .row-expiry{display:inline-flex;align-items:center;gap:4px;color:#a5525d;font-size:9px;font-weight:800;line-height:1.25}
 .row-expiry::before{content:'';width:6px;height:6px;flex:none;border-radius:50%;background:#c46d74;box-shadow:0 0 0 3px #c46d7417}
 .expiry-detail{margin:8px 0 0;padding:8px 10px;border:1px solid #f0d8d8;border-radius:10px;background:#fff3f2;color:#a5525d;font-size:11px;font-weight:800}
+.expiry-detail{display:flex;align-items:center;gap:7px}
+.detail-loading{display:flex;align-items:center;gap:8px;padding:12px 0;color:#89799a;font-size:10px}
+.detail-error,.detail-muted{font-size:10px;line-height:1.5;color:#90869a;margin:8px 0}
+.detail-section{margin:19px 0 0}
+.detail-section-heading{display:flex;align-items:baseline;justify-content:space-between;gap:10px;margin-bottom:9px}
+.detail-section-heading h3{font:700 16px Fraunces,serif;margin:0;color:var(--ink)}
+.detail-section-heading small{font-size:9px;color:#9b8fa4;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.trailer-preview{width:100%;height:112px;border-radius:15px;background-size:cover;background-position:center 38%;display:flex;align-items:center;gap:12px;padding:14px;color:white;text-align:left}
+.trailer-preview>span:last-child{display:flex;flex-direction:column;gap:4px;min-width:0}
+.trailer-preview strong{font:700 13px Fraunces,serif}
+.trailer-preview small{font-size:9px;opacity:.85;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.trailer-play{width:39px;height:39px;flex:none;border-radius:50%;display:grid;place-items:center;background:#ffffffdf;color:#76559c;padding-left:3px}
+.trailer-frame{position:relative;width:100%;aspect-ratio:16/9;border-radius:14px;overflow:hidden;background:#21182c}
+.trailer-frame iframe{position:absolute;inset:0;width:100%;height:100%;border:0}
+.cast-slider{display:flex;gap:11px;overflow-x:auto;padding:1px 1px 9px;scroll-snap-type:x mandatory;scrollbar-width:none}
+.cast-slider::-webkit-scrollbar{display:none}
+.cast-card{width:79px;flex:none;display:flex;flex-direction:column;gap:4px;scroll-snap-align:start}
+.cast-photo{height:95px;border-radius:12px;background:#eee8f5;overflow:hidden;display:grid;place-items:center;color:#8b72ab;font:700 19px Fraunces,serif}
+.cast-photo img{width:100%;height:100%;object-fit:cover}
+.cast-card strong{font-size:9px;line-height:1.3;color:#4c4055;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.cast-card small{font-size:8px;line-height:1.3;color:#95899d;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.detail-providers{display:flex;gap:10px;overflow-x:auto;padding:1px 1px 7px;scrollbar-width:none}
+.detail-providers::-webkit-scrollbar{display:none}
+.detail-provider{width:61px;flex:none;display:flex;align-items:center;flex-direction:column;gap:5px;text-align:center}
+.detail-provider img,.detail-provider>span{width:42px;height:42px;border-radius:12px;object-fit:cover;background:#eee8f5;display:grid;place-items:center;color:#8267a5;font-weight:800}
+.detail-provider small{font-size:8px;line-height:1.2;color:#7f7488;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.detail-facts a{color:#7755a2;text-decoration:underline;text-underline-offset:2px;font-size:10px}
 .page-watchlist .remove-under{background:linear-gradient(140deg,#b85c75,#d08292)}
 .page-watchlist .watched-under{background:linear-gradient(140deg,#75579e,#9b80bd)}
 .page-watchlist .quest-scroll-hint{color:#88769f;font-weight:600}
@@ -380,3 +407,4 @@ html:has(.app-main.page-home),html:has(.app-main.page-watchlist),html:has(.app-m
 .provider-settings-actions .primary-button{min-width:132px;height:42px;font-size:11px}
 .provider-settings-actions button:disabled{opacity:.6}
 @media(min-width:700px){.account-actions-backdrop{align-items:flex-end}.account-actions-sheet{border-radius:25px 25px 0 0}}
+.account-avatar-image{display:block;width:100%;height:100%;border-radius:inherit;object-fit:cover}
