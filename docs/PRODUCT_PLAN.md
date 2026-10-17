@@ -36,12 +36,13 @@ Add database row-level security so users can access only their own profile, list
 
 ## Technical direction
 - TMDB API: movie metadata, posters, discovery. Confirm key setup and attribution requirements before implementation.
-- Supabase: Auth and Postgres; free tier is suitable for a small personal project but may pause inactive projects.
+- Supabase Auth with Google OAuth is the primary sign-in method. First-time users select the streaming services they currently use; that preference is stored in their profile for future recommendations.
+- Supabase Postgres holds profiles under row-level security. Movie lists and activity are still in-memory sample data and need their own persistence implementation.
+- Supabase free tier is suitable for a small personal project but may pause inactive projects.
 - Cloudflare Pages: deploy the phone-first web frontend on a free generated subdomain.
 - Custom domain, desktop layout, social features, and advanced recommendation tuning are out of initial scope.
 
 ## Open decisions for implementation
-- Preferred sign-in method (email/password or email magic link).
 - Whether to seed Discover with popular movies, genres, or a mix.
 - Whether “watched” items remain in Watchlist or move to a separate history.
 

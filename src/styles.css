@@ -290,3 +290,32 @@ html:has(.app-main.page-home),html:has(.app-main.page-watchlist),html:has(.app-m
 }
 .poster-genre{width:auto!important;height:auto!important;min-width:0!important;min-height:0!important;padding:0!important;border:0!important;border-radius:0!important;background:transparent!important;color:#fff!important;font-size:23px!important;line-height:1!important;text-shadow:0 2px 6px #211536aa;box-shadow:none!important}
 .poster-genre::before,.poster-genre::after{display:none!important;content:none!important}
+
+/* Google sign-in and first-run streaming-service onboarding */
+.auth-screen{position:fixed;inset:0;z-index:30;display:grid;place-items:center;overflow:auto;padding:24px 18px calc(24px + env(safe-area-inset-bottom));background:radial-gradient(ellipse at 14% 5%,#d8c5f3 0,transparent 36%),radial-gradient(ellipse at 91% 80%,#e7d9f5 0,transparent 34%),linear-gradient(145deg,#8e70c7,#b69edb);}
+.auth-card{width:min(100%,410px);max-height:calc(100dvh - 32px);overflow:auto;padding:30px 25px 25px;border:1px solid #ffffffa8;border-radius:26px;background:#fffdf9;box-shadow:0 22px 65px #39275435;text-align:center;}
+.fitrack-mark{width:55px;height:55px;margin:0 auto 22px;display:grid;place-items:center;border-radius:19px;background:linear-gradient(145deg,#8e70c7,#ac93d3);color:#fff;font-size:26px;box-shadow:0 7px 16px #71539f40}
+.auth-card>.eyebrow{margin-bottom:8px}
+.auth-card h1{margin:0;color:#3a304c;font:700 29px/1.12 Fraunces,serif;letter-spacing:-.45px}
+.auth-intro{max-width:32ch;margin:11px auto 22px;color:#81768a;font-size:13px;line-height:1.55}
+.google-signin{width:100%;min-height:49px;display:flex;align-items:center;justify-content:center;gap:12px;border:1px solid #e8e2eb;border-radius:13px;background:#fff;color:#37313e;font-size:13px;font-weight:700;box-shadow:0 2px 5px #2617370a}
+.google-signin:disabled{opacity:.55;cursor:not-allowed}
+.google-g{font:800 20px Arial,sans-serif;background:conic-gradient(from -40deg,#4285f4 0 28%,#34a853 28% 52%,#fbbc05 52% 73%,#ea4335 73%);background-clip:text;color:transparent;-webkit-background-clip:text}
+.auth-footnote{display:block;margin-top:16px;color:#978d9f;font-size:10px;line-height:1.5}
+.auth-message,.auth-error{padding:10px 12px;border-radius:11px;background:#f7edf0;color:#9b5369;font-size:11px;line-height:1.45;text-align:left;overflow-wrap:anywhere}
+.auth-message code{font-size:10px}
+.auth-loading{padding:26px;color:#76678a}
+.onboarding-card{padding-top:24px}
+.onboarding-card .fitrack-mark{width:43px;height:43px;margin-bottom:16px;border-radius:15px;font-size:21px}
+.onboarding-card .auth-intro{margin-bottom:17px;font-size:12px}
+.service-options{display:grid;grid-template-columns:1fr 1fr;gap:8px;text-align:left}
+.service-option{min-height:43px;display:flex;align-items:center;gap:9px;padding:7px 9px;border:1px solid #ece6f0;border-radius:11px;background:#fff;color:#554a60;text-align:left;font-size:11px;font-weight:700}
+.service-option.selected{border-color:#a88bce;background:#f3edf9;color:#674b91}
+.service-check{width:19px;height:19px;flex:none;display:grid;place-items:center;border:1px solid #d9d0e0;border-radius:6px;background:white;color:white}
+.service-option.selected .service-check{border-color:#8768b4;background:#8768b4}
+.onboarding-continue{width:100%;min-height:44px;margin-top:17px;font-size:12px}
+.onboarding-continue:disabled{opacity:.6}
+.skip-onboarding{display:block;margin:9px auto 0;padding:8px 12px;background:transparent;color:#8165a3;font-size:11px;font-weight:700}
+.skip-onboarding:disabled{opacity:.5}
+.account-card{width:100%;text-align:left;font:inherit}
+.signout-label{margin-left:auto;display:flex;align-items:center;gap:5px;color:#8c729e;font-size:10px;font-weight:700;white-space:nowrap}

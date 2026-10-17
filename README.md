@@ -11,7 +11,7 @@ npm run dev
 
 ## Home catalog integration
 
-The Home screen can load trending, fantasy, and popular movie shelves plus submitted searches through the `home-movies` Supabase Edge Function. The TMDB token is read only by that function. Other screens still use sample data and browser-memory interactions; Supabase authentication and user data persistence are not connected yet.
+The Home screen can load trending, fantasy, and popular movie shelves plus submitted searches through the `home-movies` Supabase Edge Function. Google sign-in uses Supabase Auth. First-time users choose the streaming services they use, and that preference is saved to their private Supabase profile. Movie lists on other screens are still sample data held in browser memory.
 
 The More tab's About Fitrack panel shows the current app version and a short history of released features.
 
@@ -31,6 +31,17 @@ For local Edge Function development, put the TMDB token in `supabase/functions/.
 - **TMDB** for movie metadata and artwork. The required approved logo and non-endorsement notice appear under **More → Movie credits**. Review TMDB's current terms before launch.
 - **Supabase** for authentication and per-user movie lists.
 - **Cloudflare Pages** for hosting on a generated `pages.dev` address.
+
+## Google sign-in and first-time setup
+
+1. Set `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY` in `.env.local` (the Supabase URL and publishable/anon key are safe for browser use; never use a service-role key here). Restart the Vite server after changing the file.
+2. In Supabase **SQL Editor**, run [`supabase/migrations/202610170001_create_profiles.sql`](supabase/migrations/202610170001_create_profiles.sql). This creates the per-user profile table and row-level security rules.
+3. In Google Cloud Console, create an OAuth 2.0 **Web application** client. Add your local app origin (for example `http://localhost:5173`) under Authorized JavaScript origins. Set the Authorized redirect URI to `https://YOUR_PROJECT_REF.supabase.co/auth/v1/callback` (replace with the callback URL shown by Supabase).
+4. In Supabase **Authentication → Sign In / Providers → Google**, enable Google and enter the OAuth client ID and client secret from Google Cloud.
+5. In Supabase **Authentication → URL Configuration**, set the Site URL to your deployed app origin and add redirect URLs for local development (`http://localhost:5173/**`) and each deployed origin you use. If using a tunnel, add its current origin too; temporary tunnel addresses change.
+6. Open Fitrack and choose **Continue with Google**. New accounts are asked which streaming services they use. The selection can be skipped and is saved to the signed-in user's profile.
+
+The profile stores only a display name and selected service names. Fitrack does not sign in to those streaming services or read their accounts. Movie lists and ratings are not yet persisted per user.
 
 TMDB ratings are labeled as TMDB ratings when loaded from TMDB; they are not IMDb scores. Free tiers and terms may change. Supabase's free projects may pause after inactivity. Never commit API secrets; keep private credentials in local environment variables and deployment settings.
 
