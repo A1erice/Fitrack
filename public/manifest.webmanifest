@@ -1,0 +1,13 @@
+{
+  "name": "Fitrack",
+  "short_name": "Fitrack",
+  "description": "Your personal movie tracker.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#f5f0fc",
+  "theme_color": "#8e70c7",
+  "icons": [
+    { "src": "/apple-touch-icon.png", "sizes": "180x180", "type": "image/png", "purpose": "any" },
+    { "src": "/fitrack-icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }
+  ]
+}
