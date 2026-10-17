@@ -213,3 +213,10 @@ html:has(.app-main.page-home),html:has(.app-main.page-watchlist),html:has(.app-m
 .tmdb-credit-notice{margin:18px 0 15px;color:#554d60;font-size:13px;line-height:1.55}
 .tmdb-credit-link{display:inline-flex;align-items:center;gap:3px;color:#6e51a0;font-size:13px;font-weight:700;text-decoration:none}
 .tmdb-credit-footnote{display:block;margin-top:19px;color:#8b8292;font-size:11px;line-height:1.45}
+
+/* Larger artwork for the primary movie browsing surfaces */
+.shelf-card{width:120px;min-width:120px}
+.shelf-poster{width:120px;height:156px}
+.row-poster{width:58px;height:74px}
+.quest-row-main .movie-row{min-height:92px}
+.movie-row-wrap.has-actions .row-poster{width:54px;height:70px}

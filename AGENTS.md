@@ -16,5 +16,6 @@
 - Prefer accessible, touch-friendly controls and responsive layouts designed for narrow phone screens first.
 - Keep dependencies small and document setup commands in README.
 - Update docs when product scope, data model, or service decisions change.
+- Before each GitHub push, increment the patch version in `package.json`; show that version dynamically in the app instead of hard-coding it.
 - Do not add tests unless specifically requested; when the user asks for verification, run the relevant checks and report results.
 
