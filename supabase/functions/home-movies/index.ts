@@ -32,24 +32,19 @@ Deno.serve(async (request: Request) => {
       if (!movieId) return respond({ error: "Could not match this title to a TMDB movie." }, 404);
       const region = validRegion(body.region);
       const today = new Date().toISOString().slice(0, 10);
-      const selectedCatalogs = Array.isArray(body.services)
-        ? [...new Set(body.services.filter((service: unknown): service is string => typeof service === "string").slice(0, 12).map((service: string) => serviceCatalogs[service]).filter(Boolean))].sort()
-        : [];
-      const availabilityKey = Deno.env.get("STREAMING_AVAILABILITY_API_KEY");
       const omdbKey = Deno.env.get("OMDB_API_KEY");
       const suppliedExpiry = body.isExpiring === true && typeof body.expiryAt === "string" && Number.isFinite(Date.parse(body.expiryAt))
         ? { expiryAt: new Date(body.expiryAt).toISOString(), service: typeof body.expiryService === "string" ? body.expiryService.slice(0, 60) : "" }
         : null;
-      const cacheKey = `movie-detail-v2:${region}:${movieId}:${selectedCatalogs.join(",")}:${omdbKey ? "imdb" : "no-imdb"}`;
+      const cacheKey = `movie-detail-v3:${region}:${movieId}:${omdbKey ? "imdb" : "no-imdb"}`;
       const cached = await readDailyCache(cacheKey, today).catch((error) => {
         console.error("daily movie-detail cache read failed", error);
         return null;
       });
       if (cached) return respond({ ...cached, cacheHit: true });
-      const [detail, watchProviders, movieNight] = await Promise.all([
+      const [detail, watchProviders] = await Promise.all([
         tmdb(`/movie/${movieId}?language=en-US&append_to_response=images,videos,credits&include_image_language=en,null`, token),
         tmdb(`/movie/${movieId}/watch/providers`, token),
-        availabilityKey && selectedCatalogs.length && !suppliedExpiry ? fetchMovieNightDetails(movieId, region, availabilityKey) : Promise.resolve(null),
       ]);
       const backdrops = (detail.images?.backdrops ?? []).filter((image: any) => image.file_path).slice(0, 12)
         .map((image: any) => `https://image.tmdb.org/t/p/w1280${image.file_path}`);
@@ -61,8 +56,8 @@ Deno.serve(async (request: Request) => {
       const providers = [...(regionProviders?.flatrate ?? []), ...(regionProviders?.free ?? []), ...(regionProviders?.ads ?? [])]
         .filter((provider: any, index: number, items: any[]) => items.findIndex((item) => item.provider_id === provider.provider_id) === index)
         .map((provider: any) => ({ id: provider.provider_id, name: provider.provider_name, logo: provider.logo_path ? `https://image.tmdb.org/t/p/w92${provider.logo_path}` : "" }));
-      const expiry = suppliedExpiry ?? findSelectedServiceExpiry(movieNight?.streamingOptions?.[region.toLowerCase()], selectedCatalogs);
-      const imdbId = typeof movieNight?.imdbId === "string" ? movieNight.imdbId : detail.imdb_id ?? "";
+      const expiry = suppliedExpiry;
+      const imdbId = detail.imdb_id ?? "";
       const imdbRating = omdbKey && imdbId ? await fetchImdbRating(imdbId, omdbKey) : "";
       const payload = {
         id: detail.id, title: detail.title ?? "", year: detail.release_date ? Number(detail.release_date.slice(0, 4)) : "",
@@ -109,6 +104,69 @@ Deno.serve(async (request: Request) => {
       const region = validRegion(body.region);
       const result = await tmdb(`/discover/movie?include_adult=false&include_video=false&language=en-US&page=1&sort_by=popularity.desc&watch_region=${region}&with_watch_providers=${providerId}&with_watch_monetization_types=flatrate`, token);
       return respond({ results: result.results ?? [], region });
+    }
+    if (action === "discover") {
+      const filters = body?.filters && typeof body.filters === "object" ? body.filters : {};
+      const region = validRegion(body.region);
+      const page = Number.isInteger(Number(body.page)) ? Math.min(500, Math.max(1, Number(body.page))) : 1;
+      const today = new Date().toISOString().slice(0, 10);
+      const params = new URLSearchParams({
+        include_adult: "false",
+        include_video: "false",
+        language: "en-US",
+        page: String(page),
+        sort_by: ["popularity.desc", "vote_average.desc", "primary_release_date.desc", "primary_release_date.asc", "revenue.desc", "vote_count.desc"].includes(filters.sort) ? filters.sort : "popularity.desc",
+      });
+      const genreValues = Array.isArray(filters.genres)
+        ? filters.genres.filter((genre: unknown): genre is string => typeof genre === "string" && /^\d{1,3}$/.test(genre)).slice(0, 8)
+        : typeof filters.genre === "string" && /^\d{1,3}$/.test(filters.genre) ? [filters.genre] : [];
+      if (genreValues.length) params.set("with_genres", [...new Set(genreValues)].join("|"));
+      const blockedGenres = Array.isArray(filters.blacklistGenres)
+        ? [...new Set(filters.blacklistGenres.filter((genre: unknown): genre is string => typeof genre === "string" && /^\d{1,3}$/.test(genre)).slice(0, 20))]
+        : [];
+      if (blockedGenres.length) params.set("without_genres", blockedGenres.join("|"));
+      const yearFrom = validYear(filters.yearFrom);
+      const yearTo = validYear(filters.yearTo);
+      if (yearFrom) params.set("primary_release_date.gte", `${yearFrom}-01-01`);
+      if (yearTo) params.set("primary_release_date.lte", `${yearTo}-12-31`);
+      const minimumRating = validDecimal(filters.minimumRating, 0, 10);
+      if (minimumRating !== null) params.set("vote_average.gte", String(minimumRating));
+      params.set("vote_count.gte", minimumRating !== null ? "50" : "10");
+      if (filters.runtime === "short") params.set("with_runtime.lte", "90");
+      if (filters.runtime === "feature") { params.set("with_runtime.gte", "91"); params.set("with_runtime.lte", "150"); }
+      if (filters.runtime === "long") params.set("with_runtime.gte", "151");
+      const language = typeof filters.language === "string" && /^[a-z]{2,3}$/i.test(filters.language) ? filters.language.toLowerCase() : "";
+      if (language) params.set("with_original_language", language);
+      const provider = Number(filters.provider);
+      if (Number.isInteger(provider) && provider > 0 && provider <= 10000) {
+        params.set("watch_region", region);
+        params.set("with_watch_providers", String(provider));
+        params.set("with_watch_monetization_types", "flatrate|free|ads");
+      }
+      const keyword = typeof filters.keyword === "string" ? filters.keyword.trim().slice(0, 60) : "";
+      if (keyword) {
+        const keywordCacheKey = `discover-keyword-v1:${normalizeTitle(keyword)}`;
+        let keywordMatch = await readDailyCache(keywordCacheKey, today).catch(() => null);
+        if (!keywordMatch) {
+          const keywordResults = await tmdb(`/search/keyword?query=${encodeURIComponent(keyword)}&page=1`, token);
+          const matches = keywordResults.results ?? [];
+          const exact = matches.find((match: any) => normalizeTitle(match.name ?? "") === normalizeTitle(keyword));
+          keywordMatch = exact ?? matches[0] ?? null;
+          if (keywordMatch) await writeDailyCache(keywordCacheKey, today, keywordMatch).catch((error) => console.error("daily discover keyword cache write failed", error));
+        }
+        if (!keywordMatch?.id) return respond({ results: [], page, totalPages: 1, region, keywordNotFound: true });
+        params.set("with_keywords", String(keywordMatch.id));
+      }
+      const cacheKey = `discover-v1:${params.toString()}`;
+      const cached = await readDailyCache(cacheKey, today).catch((error) => {
+        console.error("daily discover cache read failed", error);
+        return null;
+      });
+      if (cached) return respond({ ...cached, cacheHit: true });
+      const result = await tmdb(`/discover/movie?${params.toString()}`, token);
+      const payload = { results: result.results ?? [], page, totalPages: Math.min(500, Number(result.total_pages ?? 1)), region, cacheHit: false };
+      await writeDailyCache(cacheKey, today, payload).catch((error) => console.error("daily discover cache write failed", error));
+      return respond(payload);
     }
     if (action === "expiring") {
       const availabilityKey = Deno.env.get("STREAMING_AVAILABILITY_API_KEY");
@@ -325,39 +383,24 @@ function validRegion(value: unknown) {
   return typeof value === "string" && /^[A-Za-z]{2}$/.test(value) ? value.toUpperCase() : "US";
 }
 
+function validYear(value: unknown) {
+  const year = Number(value);
+  const currentYear = new Date().getUTCFullYear() + 1;
+  return Number.isInteger(year) && year >= 1870 && year <= currentYear ? year : null;
+}
+
+function validDecimal(value: unknown, minimum: number, maximum: number) {
+  if (value === "" || value === null || value === undefined) return null;
+  const number = Number(value);
+  return Number.isFinite(number) && number >= minimum && number <= maximum ? Math.round(number * 10) / 10 : null;
+}
+
 async function tmdb(path: string, token: string) {
   const response = await fetch(`${TMDB_API}${path}`, {
     headers: { accept: "application/json", Authorization: `Bearer ${token}` },
   });
   if (!response.ok) throw new Error(`TMDB returned ${response.status}`);
   return await response.json();
-}
-
-async function fetchMovieNightDetails(movieId: number, region: string, apiKey: string) {
-  try {
-    const response = await fetch(`${AVAILABILITY_API}/shows/movie/${movieId}?country=${region.toLowerCase()}`, {
-      headers: { "X-API-Key": apiKey, accept: "application/json" },
-    });
-    if (!response.ok) throw new Error(`Streaming Availability returned ${response.status}`);
-    return await response.json();
-  } catch (error) {
-    console.error("movie-night title detail lookup failed", error);
-    return null;
-  }
-}
-
-function findSelectedServiceExpiry(options: any[] | undefined, selectedCatalogs: string[]) {
-  if (!Array.isArray(options) || selectedCatalogs.length === 0) return null;
-  const now = Date.now();
-  const deadline = now + 31 * 86_400_000;
-  const matches = options.flatMap((option: any) => {
-    const serviceId = String(option.service?.id ?? "").toLowerCase();
-    const timestamp = Number(option.expiresOn);
-    const expiryMs = Number.isFinite(timestamp) && timestamp > 0 ? timestamp * 1000 : NaN;
-    if (!selectedCatalogs.includes(serviceId) || !Number.isFinite(expiryMs) || expiryMs <= now || expiryMs > deadline) return [];
-    return [{ expiryAt: new Date(expiryMs).toISOString(), service: option.service?.name ?? serviceId }];
-  });
-  return matches.sort((a, b) => a.expiryAt.localeCompare(b.expiryAt))[0] ?? null;
 }
 
 async function fetchImdbRating(imdbId: string, apiKey: string) {
