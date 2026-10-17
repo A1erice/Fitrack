@@ -220,3 +220,20 @@ html:has(.app-main.page-home),html:has(.app-main.page-watchlist),html:has(.app-m
 .row-poster{width:58px;height:74px}
 .quest-row-main .movie-row{min-height:92px}
 .movie-row-wrap.has-actions .row-poster{width:54px;height:70px}
+
+/* Version history in More > About Fitrack */
+.about-backdrop{align-items:flex-end}
+.about-sheet{position:relative;width:min(100%,580px);max-height:86dvh;overflow:auto;padding:30px 25px calc(25px + env(safe-area-inset-bottom));border-radius:25px 25px 0 0;background:#fffdf9;box-shadow:0 -12px 44px #21153620;animation:modal-up .25s ease-out}
+.about-sheet h2{margin:7px 0 7px;font:700 28px/1.1 Fraunces,serif;color:#3a304c}
+.about-sheet .credits-close{background:#f0ebf6;color:#695784}
+.about-current-version{display:flex;align-items:center;gap:7px;margin:0 0 20px;color:#82788e;font-size:12px}
+.about-current-version strong{padding:4px 8px;border-radius:20px;background:#eee7f8;color:#6f529e;font-size:11px}
+.release-history{display:flex;flex-direction:column;gap:16px}
+.release-entry{padding:15px 15px 13px;border:1px solid #eee8f3;border-radius:16px;background:linear-gradient(135deg,#fffefd,#faf7fd)}
+.release-heading{display:flex;align-items:flex-start;justify-content:space-between;gap:10px}
+.release-version{color:#8d7ca3;font-size:10px;font-weight:800;letter-spacing:.07em;text-transform:uppercase}
+.release-heading h3{margin:4px 0 0;font:600 16px/1.25 Fraunces,serif;color:#403151}
+.release-current-badge{flex:none;padding:5px 7px;border-radius:20px;background:#e9def7;color:#70529f;font-size:8px;font-weight:900;letter-spacing:.08em}
+.release-entry ul{display:flex;flex-direction:column;gap:7px;margin:12px 0 0;padding-left:17px;color:#70677b;font-size:11px;line-height:1.45}
+.release-entry li::marker{color:#9474c7}
+.about-footer{display:block;margin-top:18px;color:#93899b;font-size:10px;text-align:center}

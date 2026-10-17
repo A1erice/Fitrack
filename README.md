@@ -13,6 +13,8 @@ npm run dev
 
 The Home screen can load trending, fantasy, and popular movie shelves plus submitted searches through the `home-movies` Supabase Edge Function. The TMDB token is read only by that function. Other screens still use sample data and browser-memory interactions; Supabase authentication and user data persistence are not connected yet.
 
+The More tab's About Fitrack panel shows the current app version and a short history of released features.
+
 ### Connect the Home catalog
 
 1. Copy `.env.example` to `.env.local` and fill in your Supabase project URL and publishable (or legacy anon) key. These are browser client settings; do not put a TMDB token in a `VITE_` variable.
