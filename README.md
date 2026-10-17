@@ -11,24 +11,26 @@ npm run dev
 
 ## Home catalog integration
 
-The Home screen can load trending, fantasy, and popular movie shelves plus submitted searches through the `home-movies` Supabase Edge Function. Google sign-in uses Supabase Auth. First-time users choose the streaming services they use, and that preference is saved to their private Supabase profile. Movie lists on other screens are still sample data held in browser memory.
+The Home screen loads trending and popular movie shelves plus submitted searches through the `home-movies` Supabase Edge Function. Its compact **Leaving soon** shelf uses each user's saved streaming services to show U.S. subscription movies with announced departure dates in the next 31 days. The Edge Function caches each selected-service combination and page in Supabase for one UTC day; additional pages are fetched only when the user taps **Load more departures**. Movie lists on other screens are still sample data held in browser memory.
 
 The More tab's About Fitrack panel shows the current app version and a short history of released features.
 
 ### Connect the Home catalog
 
 1. Copy `.env.example` to `.env.local` and fill in your Supabase project URL and publishable (or legacy anon) key. These are browser client settings; do not put a TMDB token in a `VITE_` variable.
-2. In the Supabase Dashboard, open **Edge Functions → Secrets** and add `TMDB_READ_ACCESS_TOKEN` with your TMDB Read Access Token. The token already in the ignored local `.env` is not automatically uploaded to Supabase.
+2. In the Supabase Dashboard, open **Edge Functions → Secrets** and add `TMDB_READ_ACCESS_TOKEN` and `STREAMING_AVAILABILITY_API_KEY`. The token already in the ignored local `.env` is not automatically uploaded to Supabase.
 3. Install the Supabase CLI and sign in: `npx supabase login`.
 4. Link this checkout to your Supabase project: `npx supabase link --project-ref YOUR_PROJECT_REF` (find the ref in the project URL or project settings).
-5. Deploy the function: `npx supabase functions deploy home-movies`.
-6. Run `npm run dev` and open Home. The function is read-only and does not require a signed-in user yet.
+5. Apply database migrations: `npx supabase db push` (creates the private daily response cache).
+6. Deploy the function: `npx supabase functions deploy home-movies`.
+7. Run `npm run dev` and open Home. The function reads catalog data and writes a server-side daily cache; it does not require a signed-in user yet.
 
-For local Edge Function development, put the TMDB token in `supabase/functions/.env` (ignored by Git) and run `npx supabase functions serve home-movies --env-file supabase/functions/.env` alongside the Vite server.
+For local Edge Function development, put both API keys in `supabase/functions/.env` (ignored by Git) and run `npx supabase functions serve home-movies --env-file supabase/functions/.env` alongside the Vite server.
 
 ## Planned services
 
 - **TMDB** for movie metadata and artwork. The required approved logo and non-endorsement notice appear under **More → Movie credits**. Review TMDB's current terms before launch.
+- **Streaming Availability API by Movie of the Night** for announced streaming departures and expiry timestamps. The required attribution appears under **More → Movie credits**; response pages are cached for one UTC day to limit requests.
 - **Supabase** for authentication and per-user movie lists.
 - **Cloudflare Pages** for hosting on a generated `pages.dev` address.
 
@@ -43,6 +45,6 @@ For local Edge Function development, put the TMDB token in `supabase/functions/.
 
 The profile stores only a display name and selected service names. Fitrack does not sign in to those streaming services or read their accounts. Movie lists and ratings are not yet persisted per user.
 
-TMDB ratings are labeled as TMDB ratings when loaded from TMDB; they are not IMDb scores. Free tiers and terms may change. Supabase's free projects may pause after inactivity. Never commit API secrets; keep private credentials in local environment variables and deployment settings.
+TMDB ratings are labeled as TMDB ratings when loaded from TMDB; they are not IMDb scores. Streaming-provider icons use TMDB/JustWatch, while departure dates come from Streaming Availability API by Movie of the Night. Expiry dates are shown only when the API supplies an exact date; they can change. Free tiers and terms may change. Supabase's free projects may pause after inactivity. Never commit API secrets; keep private credentials in local environment variables and deployment settings.
 
 See [project guidance](AGENTS.md) and [product plan](docs/PRODUCT_PLAN.md).

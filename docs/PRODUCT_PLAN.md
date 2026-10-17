@@ -35,7 +35,8 @@ A private, phone-first web app to track movies the user likes and wants to watch
 Add database row-level security so users can access only their own profile, lists, and user movie states. Avoid storing more TMDB content than allowed by its current terms.
 
 ## Technical direction
-- TMDB API: movie metadata, posters, discovery. Confirm key setup and attribution requirements before implementation.
+- TMDB API: movie metadata, posters, discovery, and provider logos. Credit TMDB and JustWatch.
+- Streaming Availability API by Movie of the Night: U.S. subscription departures with exact expiry dates. Cache selected-service results in Supabase for one UTC day; credit the provider in More.
 - Supabase Auth with Google OAuth is the primary sign-in method. First-time users select the streaming services they currently use; that preference is stored in their profile for future recommendations.
 - Supabase Postgres holds profiles under row-level security. Movie lists and activity are still in-memory sample data and need their own persistence implementation.
 - Supabase free tier is suitable for a small personal project but may pause inactive projects.

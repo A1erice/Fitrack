@@ -238,6 +238,28 @@ html:has(.app-main.page-home),html:has(.app-main.page-watchlist),html:has(.app-m
 .page-watchlist .row-quick-actions button{background:#e8def4;color:#72529c;box-shadow:0 2px 7px #58406e16}
 .page-watchlist .row-quick-actions button:last-child{color:#a85668;background:#f8e6ec}
 .page-watchlist .swipe-under{width:84px;font-weight:800;letter-spacing:.1px}
+
+/* Compact Home row for the streaming services selected during onboarding */
+.page-home .provider-shelf{flex:none;margin:8px 0 13px;padding:10px 11px 11px;border:1px solid #e4d9ef;border-radius:15px;background:linear-gradient(110deg,#f5f0fb,#fffdfa);box-shadow:0 3px 10px #6047790a}
+.provider-shelf-heading{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
+.provider-shelf-heading h3{margin:0;color:#473b57;font:700 13px Fraunces,serif}
+.provider-shelf-heading small{display:block;margin-top:2px;color:#91869b;font-size:9px}
+.provider-grid{display:flex;gap:7px;overflow-x:auto;scrollbar-width:none;-webkit-overflow-scrolling:touch}
+.provider-grid::-webkit-scrollbar{display:none}
+.provider-card{display:flex;align-items:center;gap:7px;flex:0 0 auto;min-width:112px;max-width:150px;height:38px;padding:4px 8px;border:1px solid #e9e2ef;border-radius:10px;background:#fff;color:#50445e;text-align:left;box-shadow:0 2px 5px #4532550a}
+.provider-card strong{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:10px}
+.provider-card>svg{flex:none;color:#9b8baa}
+.provider-logo{width:27px;height:27px;flex:none;display:grid;place-items:center;overflow:hidden;border:1px solid #eee9f1;border-radius:7px;background:white;color:#70529f;font-size:10px;font-weight:800}
+.provider-logo img{width:100%;height:100%;object-fit:cover}
+.provider-empty{margin:0;padding:3px 1px;color:#877b91;font-size:9px;line-height:1.4}
+.provider-results-head{align-items:flex-end;gap:8px}
+.provider-results-head h2{margin:4px 0;font-size:21px}
+.provider-results-head .back-link{margin-bottom:2px}
+.provider-region-note{display:block;max-width:245px;color:#8e8398;font-size:9px;line-height:1.35}
+.provider-result-count{flex:none;margin-bottom:3px;padding:5px 7px;border:1px solid #e8dff0;border-radius:9px;background:#f5effa;color:#795da2;font-size:9px;font-weight:800;white-space:nowrap}
+.row-expiry{display:inline-flex;align-items:center;gap:4px;color:#a5525d;font-size:9px;font-weight:800;line-height:1.25}
+.row-expiry::before{content:'';width:6px;height:6px;flex:none;border-radius:50%;background:#c46d74;box-shadow:0 0 0 3px #c46d7417}
+.expiry-detail{margin:8px 0 0;padding:8px 10px;border:1px solid #f0d8d8;border-radius:10px;background:#fff3f2;color:#a5525d;font-size:11px;font-weight:800}
 .page-watchlist .remove-under{background:linear-gradient(140deg,#b85c75,#d08292)}
 .page-watchlist .watched-under{background:linear-gradient(140deg,#75579e,#9b80bd)}
 .page-watchlist .quest-scroll-hint{color:#88769f;font-weight:600}
@@ -319,3 +341,42 @@ html:has(.app-main.page-home),html:has(.app-main.page-watchlist),html:has(.app-m
 .skip-onboarding:disabled{opacity:.5}
 .account-card{width:100%;text-align:left;font:inherit}
 .signout-label{margin-left:auto;display:flex;align-items:center;gap:5px;color:#8c729e;font-size:10px;font-weight:700;white-space:nowrap}
+
+/* Streaming departure list loading and pagination */
+.movie-loading-list{display:grid;gap:9px;padding:2px 0}
+.movie-loading-row{display:flex;align-items:center;gap:12px;min-height:104px;padding:10px;border:1px solid #eee8f2;border-radius:15px;background:#fff9;overflow:hidden}
+.loading-poster,.loading-copy i{display:block;background:linear-gradient(100deg,#eee8f3 20%,#f8f4fa 38%,#eee8f3 58%);background-size:220% 100%;animation:movie-shimmer 1.35s ease-in-out infinite}
+.loading-poster{width:62px;height:84px;flex:none;border-radius:10px}
+.loading-copy{display:grid;flex:1;gap:9px}
+.loading-copy i{height:9px;border-radius:99px}
+.loading-copy i:first-child{width:74%;height:12px}
+.loading-copy i:last-child{width:42%}
+.load-more-expiring{width:100%;min-height:54px;margin:10px 0 16px;padding:8px 14px;display:flex;align-items:center;justify-content:center;gap:7px;flex-wrap:wrap;border:1px solid #e9e1ef;border-radius:14px;background:#fbf9fd;color:#755995;font-size:12px;font-weight:800;transition:background .18s ease,border-color .18s ease,transform .18s ease}
+.load-more-expiring span{flex-basis:100%;margin-top:-5px;color:#998ba5;font-size:9px;font-weight:600}
+.load-more-expiring:not(:disabled):active{transform:scale(.985);background:#f3edf8;border-color:#d7c8e5}
+.load-more-expiring:disabled{opacity:.78}
+.loading-spinner{animation:loading-rotate .8s linear infinite}
+@keyframes movie-shimmer{to{background-position-x:-220%}}
+@keyframes loading-rotate{to{transform:rotate(360deg)}}
+
+.home-avatar{padding:0;flex:none;touch-action:manipulation;transition:transform .16s ease,box-shadow .16s ease}
+.home-avatar:active{transform:scale(.94);box-shadow:0 1px 7px #755e9c24}
+.account-actions-backdrop{z-index:13}
+.account-actions-sheet{position:relative;width:min(100%,580px);max-height:82dvh;overflow:auto;padding:30px 22px calc(24px + env(safe-area-inset-bottom));border-radius:25px 25px 0 0;background:#fffdf9;box-shadow:0 -12px 44px #21153620;animation:modal-up .25s ease-out}
+.account-actions-sheet h2{margin:7px 45px 19px 0;font:700 25px/1.1 Fraunces,serif;color:#3a304c}
+.account-actions-close{top:21px;right:19px;background:#f0ebf6;color:#695784;border:0}
+.account-action-row{width:100%;display:flex;align-items:center;gap:11px;padding:11px;border:1px solid #eee7f2;border-radius:15px;background:#fff;text-align:left}
+.account-action-row>span:nth-child(2){display:flex;flex:1;flex-direction:column;gap:4px}
+.account-action-row strong{font:700 13px Fraunces,serif;color:#493c58}
+.account-action-row small{font-size:10px;color:#93879d}
+.account-action-row>svg:last-child{color:#a99bb4}
+.account-action-icon{width:37px;height:37px;display:grid;place-items:center;border-radius:12px;background:#f0e9f7;color:#8061aa}
+.account-actions-note{margin:13px 2px 0;color:#988b9f;font-size:10px}
+.provider-settings-sheet{padding-bottom:calc(23px + env(safe-area-inset-bottom))}
+.provider-settings-intro{margin:-8px 0 15px;color:#85798d;font-size:11px;line-height:1.5}
+.provider-settings-sheet .service-options{margin-bottom:14px}
+.provider-settings-actions{display:flex;align-items:center;justify-content:flex-end;gap:10px;padding-top:3px}
+.provider-settings-actions .text-button{min-height:40px;padding:0 12px;color:#81758d}
+.provider-settings-actions .primary-button{min-width:132px;height:42px;font-size:11px}
+.provider-settings-actions button:disabled{opacity:.6}
+@media(min-width:700px){.account-actions-backdrop{align-items:flex-end}.account-actions-sheet{border-radius:25px 25px 0 0}}
