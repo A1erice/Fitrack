@@ -1,16 +1,17 @@
 # Fitrack
 
-A phone-first personal movie tracker for discovering films, saving a watchlist, and organizing favorites.
+A phone-first personal movie tracker with a cozy, storybook RPG-inspired look.
 
-## Product direction
+## Run locally
 
-- **Home:** recently added and watched movies.
-- **Discover:** one movie at a time; swipe left to pass and right to like.
-- **Watchlist:** central destination for movies to watch.
-- **Lists:** Favorites by default, with custom lists planned.
-- **More:** reserved for future settings and options.
+```sh
+npm install
+npm run dev
+```
 
-A movie can be both a favorite and on the watchlist. Favorites mean “I like this”; watchlist means “I want to watch this.”
+## Current frontend prototype
+
+The five bottom navigation areas are Home, Discover, Quest Log (watchlist), Collections, and More. The middle Quest Log button is emphasized. The current screens use sample movie data and browser-memory interactions only; TMDB, Supabase authentication, and database persistence are not connected yet.
 
 ## Planned services
 
@@ -20,9 +21,4 @@ A movie can be both a favorite and on the watchlist. Favorites mean “I like th
 
 Free tiers and terms may change. Supabase's free projects may pause after inactivity. Never commit API secrets; keep private credentials in local environment variables and deployment settings.
 
-## Project status
-
-Planning and project setup. The application implementation has not started.
-
 See [project guidance](AGENTS.md) and [product plan](docs/PRODUCT_PLAN.md).
-
