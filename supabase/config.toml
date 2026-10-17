@@ -1,0 +1,2 @@
+[functions.home-movies]
+verify_jwt = false
