@@ -455,6 +455,28 @@ html:has(.app-main.page-home),html:has(.app-main.page-watchlist),html:has(.app-m
 .load-more-expiring span{flex-basis:100%;margin-top:-5px;color:#998ba5;font-size:9px;font-weight:600}
 .load-more-expiring:not(:disabled):active{transform:scale(.985);background:#f3edf8;border-color:#d7c8e5}
 .load-more-expiring:disabled{opacity:.78}
+.theme-browser{margin:22px 0 24px;padding:14px;border:1px solid #e8e0ef;border-radius:18px;background:#f8f4fb}
+.theme-browser-heading{display:flex;align-items:end;justify-content:space-between;margin:0 1px 11px}
+.theme-browser-heading h3{margin:3px 0 0;font:700 18px Fraunces,serif;color:#44364f}
+.theme-browser-heading>span{font-size:9px;color:#93869e}
+.theme-browser-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px}
+.theme-browser-card{min-width:0;min-height:47px;padding:7px 9px;display:flex;align-items:center;gap:8px;text-align:left;border:1px solid #ebe4f0;border-radius:12px;background:#fffdfd;color:#766183;box-shadow:0 2px 6px #4d3b5a08}
+.theme-browser-card>span{width:28px;height:28px;flex:none;display:grid;place-items:center;border-radius:9px;background:#f0e8f7;font-size:17px}
+.theme-browser-card strong{min-width:0;flex:1;font-size:10px;font-weight:700;line-height:1.2}
+.theme-browser-card>svg{flex:none;color:#b0a2bb}
+.theme-browser-card:active{transform:scale(.98);background:#f6f0fa}
+@media(min-width:420px){.theme-browser-grid{grid-template-columns:repeat(3,minmax(0,1fr))}}
+.page-home .home-shelves{gap:16px}
+.page-home .home-shelves>.shelf,.page-home .home-shelves>.provider-shelf,.page-home .home-shelves>.theme-browser{margin:0}
+.page-home .home-shelves>.theme-browser{flex:none;min-height:120px}
+.page-home .home-movie-section{margin-top:12px}
+.page-home .home-search{margin-bottom:12px}
+.page-home .provider-shelf{margin:0}
+.theme-browser{position:relative;overflow:hidden;background:#f1eaf8}
+.theme-browser-pattern{position:absolute;inset:0;overflow:hidden;pointer-events:none;word-break:break-all;color:#8464ad;font-size:14px;line-height:2.5;letter-spacing:7px;opacity:.13}
+.theme-browser>*:not(.theme-browser-pattern){position:relative;z-index:1}
+.theme-randomize-button{display:grid;grid-template-columns:auto 1fr;justify-content:center;justify-items:center;column-gap:7px;min-height:54px}
+.theme-randomize-button>span{grid-column:1/-1;flex-basis:auto;margin-top:0}
 .loading-spinner{animation:loading-rotate .8s linear infinite}
 @keyframes movie-shimmer{to{background-position-x:-220%}}
 @keyframes loading-rotate{to{transform:rotate(360deg)}}
@@ -556,3 +578,39 @@ html:has(.app-main.page-home),html:has(.app-main.page-watchlist),html:has(.app-m
 
 .fitrack-mark img{display:block;width:100%;height:100%;object-fit:cover;border-radius:inherit}.home-brand-title{display:flex!important;align-items:center;gap:9px}.home-brand-icon{width:36px;height:36px;border-radius:11px;box-shadow:0 3px 9px #71539f26}
 
+/* Home shelves use a soft lilac card; the current month's shelf adds a faint repeating motif. */
+.home-shelves{display:flex;flex-direction:column;gap:11px}
+.home-shelves .shelf{position:relative;overflow:hidden;margin:0;padding:11px 12px 12px;border:1px solid #e6deef;border-radius:17px;background:#f7f3fa;box-shadow:0 4px 13px #49345f09}
+.home-shelves .shelf-heading,.home-shelves .shelf-row{position:relative;z-index:1}
+.home-shelves .shelf-heading{margin-bottom:9px}
+.shelf-pattern{position:absolute;inset:0;z-index:0;overflow:hidden;pointer-events:none;word-break:break-all;color:#8464ad;font-size:13px;line-height:2.5;letter-spacing:6px;opacity:.13}
+.home-shelves .theme-shelf{background:#f1eaf8}
+.theater-shelf-note{display:block;margin-top:3px;color:#8e8398;font-size:10px;font-weight:600;line-height:1.35}
+.page-lists .list-stack .movie-row-wrap,.more-movie-list .movie-row-wrap{margin:0 0 10px;padding:3px 8px;border:1px solid #e6deef;border-radius:15px;background:#f4eff9;box-shadow:0 4px 12px #49345f0b}
+.page-lists .list-stack .movie-row-wrap.has-actions{gap:4px}
+.page-lists .list-stack .movie-row-wrap .movie-row,.more-movie-list .movie-row-wrap .movie-row{background:transparent}
+.movie-modal{transition:transform .2s ease-out;touch-action:pan-y}
+.movie-modal.is-pulling{transition:none;will-change:transform}
+
+
+/* Gemini movie recommender, placed after the seasonal shelf on Home */
+.ai-recommendation{position:relative;overflow:hidden;min-height:210px;padding:20px 17px;border:1px solid #e7ddf1;border-radius:18px;background:linear-gradient(135deg,#fffefe 0%,#f7f1fc 100%);box-shadow:0 5px 15px #6c558514}
+.ai-recommendation:before{content:'✦  ✧  ✦';position:absolute;right:12px;top:10px;color:#bda8d8;opacity:.38;font-size:17px;letter-spacing:7px;pointer-events:none}
+.ai-recommendation-heading{display:flex;align-items:center;gap:10px;position:relative}
+.ai-recommendation-icon{width:35px;height:35px;flex:none;display:grid;place-items:center;border-radius:12px;background:#eee5f8;color:#815fac}
+.ai-recommendation-heading h3{margin:3px 0 0;font:700 17px Fraunces,serif;color:#44364f}
+.ai-recommendation-description{margin:13px 0 17px;color:#83778f;font-size:12px;line-height:1.55;max-width:34ch}
+.ai-recommendation-form{display:flex;gap:7px;align-items:center}
+.ai-recommendation-form input{flex:1;min-width:0;height:48px;padding:0 12px;border:1px solid #e5dced;border-radius:12px;background:#fffefe;color:#453a4f;font:500 16px 'DM Sans',sans-serif;outline:none}
+.ai-recommendation-form input:focus{border-color:#a78bc9;box-shadow:0 0 0 3px #a78bc91c}
+.ai-recommendation-form button{height:48px;flex:none;display:flex;align-items:center;justify-content:center;gap:6px;padding:0 14px;border-radius:12px;background:#896bb7;color:white;font-size:11px;font-weight:800;box-shadow:0 4px 9px #71539f22}
+.ai-recommendation-form button:disabled{opacity:.55;cursor:wait}
+.ai-recommendation-error{margin:10px 0 0;padding:9px 10px;border:1px solid #efd5df;border-radius:10px;background:#fff7fa;color:#965b70;font-size:11px;line-height:1.4}
+.ai-recommendation-result{margin-top:12px;padding-top:11px;border-top:1px solid #e8dfef}
+.ai-recommendation-summary{margin:0 0 10px;color:#574868;font-size:12px;line-height:1.5}
+.ai-recommendation-movies{display:flex;flex-direction:column;gap:5px}
+.ai-recommendation-movies .movie-row{min-height:70px;padding:6px 4px;border:1px solid #eee7f3;border-radius:12px;background:#fffdfd}
+.ai-recommendation-movies .row-poster{width:46px;height:62px;min-width:46px}
+.ai-recommendation-movies .row-copy strong{font-size:12px}
+.ai-recommendation-movies .row-copy small{font-size:9px}
+.ai-movie-reason{display:block;color:#8a7a98;font-size:9px;line-height:1.35;margin-top:3px}

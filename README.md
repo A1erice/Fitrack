@@ -11,7 +11,7 @@ npm run dev
 
 ## Home catalog integration
 
-The Home screen loads trending and popular movie shelves plus submitted searches through the `home-movies` Supabase Edge Function. Discover samples random release years and shuffled TMDB results by default, with multi-select genres, a release-year range, optional TMDB theme keywords, rating, runtime, language, streaming-service, and sort filters. It avoids movies already saved to any collection or the Quest Log. Passed movies are stored in a private per-account history: a first pass allows one more appearance, and a second pass hides that movie from Discover. Each filter/page response is cached in Supabase for one UTC day. Its compact **Leaving soon** shelf uses each user's saved streaming services to show U.S. subscription movies with announced departure dates in the next 31 days. Additional departure pages are fetched only when the user taps **Show more movies**. Quest Log entries are stored per account in Supabase, including the movie data needed to display catalog results and whether each movie is to watch or watched.
+The Home screen loads trending and popular movie shelves plus submitted searches through the `home-movies` Supabase Edge Function. It also has an AI movie-recommendation section after the seasonal shelf: Gemini returns a short explanation and movie suggestions, which are matched to TMDB records before they are shown. Matching prompts are cached in Supabase for one UTC day to reduce API use. Discover samples random release years and shuffled TMDB results by default, with multi-select genres, a release-year range, optional TMDB theme keywords, rating, runtime, language, streaming-service, and sort filters. It avoids movies already saved to any collection or the Quest Log. Passed movies are stored in a private per-account history: a first pass allows one more appearance, and a second pass hides that movie from Discover. Each filter/page response is cached in Supabase for one UTC day. Its compact **Leaving soon** shelf uses each user's saved streaming services to show U.S. subscription movies with announced departure dates in the next 31 days. Additional departure pages are fetched only when the user taps **Show more movies**. Quest Log entries are stored per account in Supabase, including the movie data needed to display catalog results and whether each movie is to watch or watched.
 
 The account avatar opens streaming-provider settings and a per-account movie blacklist. Blacklisted release years, genres, and original languages are excluded from Home recommendations and Discover; explicit Home searches bypass the blacklist.
 
@@ -20,20 +20,21 @@ The More tab's About Fitrack panel shows the current app version and a short his
 ### Connect the Home catalog
 
 1. Copy `.env.example` to `.env.local` and fill in your Supabase project URL and publishable (or legacy anon) key. These are browser client settings; do not put a TMDB token in a `VITE_` variable.
-2. In the Supabase Dashboard, open **Edge Functions → Secrets** and add `TMDB_READ_ACCESS_TOKEN` and `STREAMING_AVAILABILITY_API_KEY`. To show IMDb ratings, also add an `OMDB_API_KEY` from [OMDb](https://www.omdbapi.com/apikey.aspx). The token already in the ignored local `.env` is not automatically uploaded to Supabase.
+2. In the Supabase Dashboard, open **Edge Functions → Secrets** and add `TMDB_READ_ACCESS_TOKEN` and `STREAMING_AVAILABILITY_API_KEY`. To enable AI movie recommendations, add `GEMINI_API_KEY` from [Google AI Studio](https://aistudio.google.com/apikey). To show IMDb ratings, also add an `OMDB_API_KEY` from [OMDb](https://www.omdbapi.com/apikey.aspx). These are server-side Edge Function secrets; do not add them to frontend `VITE_` variables. Secrets must be configured in each environment where the function runs. The token already in the ignored local `.env` is not automatically uploaded to Supabase.
 3. Install the Supabase CLI and sign in: `npx supabase login`.
 4. Link this checkout to your Supabase project: `npx supabase link --project-ref YOUR_PROJECT_REF` (find the ref in the project URL or project settings).
 5. Apply database migrations: `npx supabase db push` (creates the private daily response cache, user collections, Quest Log tables, and private Discover pass history).
 6. Deploy the function: `npx supabase functions deploy home-movies`.
 7. Run `npm run dev` and open Home. The function reads catalog data and writes a server-side daily cache; it does not require a signed-in user yet.
 
-For local Edge Function development, put the TMDB and Movie of the Night keys, plus the optional OMDb key, in `supabase/functions/.env` (ignored by Git) and run `npx supabase functions serve home-movies --env-file supabase/functions/.env` alongside the Vite server.
+For local Edge Function development, put the TMDB and Movie of the Night keys, plus the optional Gemini and OMDb keys, in `supabase/functions/.env` (ignored by Git) and run `npx supabase functions serve home-movies --env-file supabase/functions/.env` alongside the Vite server. After changing the function or adding its secrets in Supabase, deploy it with `npx supabase functions deploy home-movies`.
 
 ## Planned services
 
 - **TMDB** for movie metadata and artwork. The required approved logo and non-endorsement notice appear under **More → Movie credits**. Review TMDB's current terms before launch.
 - **Streaming Availability API by Movie of the Night** for announced streaming departures and expiry timestamps. The required attribution appears under **More → Movie credits**; response pages are cached for one UTC day to limit requests.
 - **OMDb** (optional) for IMDb scores, using the TMDB movie's IMDb ID. Its key is stored only as a Supabase Edge Function secret.
+- **Gemini 3.5 Flash-Lite** (optional) for short, prompt-based movie recommendations with minimal thinking for lower latency. Fitrack matches up to 20 suggestions to TMDB movie records; its key is stored only as a Supabase Edge Function secret. Recommendations are cached by prompt for one UTC day.
 - **Supabase** for authentication and per-user movie lists.
 - **Cloudflare Pages** for hosting on a generated `pages.dev` address.
 

@@ -8,6 +8,20 @@ const corsHeaders = {
 
 const TMDB_API = "https://api.themoviedb.org/3";
 const AVAILABILITY_API = "https://api.movieofthenight.com/v4";
+const MONTHLY_THEMES = [
+  { month: "January", title: "Winter magic", keyword: "winter" },
+  { month: "February", title: "Love stories", keyword: "romance" },
+  { month: "March", title: "Myths & legends", keyword: "mythology" },
+  { month: "April", title: "Spring adventures", keyword: "spring" },
+  { month: "May", title: "Road trip stories", keyword: "road trip" },
+  { month: "June", title: "Summer nights", keyword: "summer" },
+  { month: "July", title: "Ocean adventures", keyword: "ocean" },
+  { month: "August", title: "Back to school", keyword: "school" },
+  { month: "September", title: "Mystery season", keyword: "mystery" },
+  { month: "October", title: "Halloween", keyword: "halloween" },
+  { month: "November", title: "Found family", keyword: "family" },
+  { month: "December", title: "Holiday magic", keyword: "christmas" },
+];
 
 Deno.serve(async (request: Request) => {
   if (request.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
@@ -19,6 +33,85 @@ Deno.serve(async (request: Request) => {
   try {
     const body = await request.json().catch(() => ({}));
     const action = body?.action;
+    if (action === "recommend") {
+      const prompt = typeof body.prompt === "string" ? body.prompt.trim().slice(0, 300) : "";
+      if (!prompt) return respond({ error: "Describe the kind of movie you want." }, 400);
+      const today = new Date().toISOString().slice(0, 10);
+      const cacheKey = `gemini-recommend-v4:${await sha256Hex(prompt.toLocaleLowerCase())}`;
+      const cached = await readDailyCache(cacheKey, today).catch(() => null);
+      if (cached) return respond({ ...cached, cacheHit: true });
+
+      const geminiKey = Deno.env.get("GEMINI_API_KEY");
+      if (!geminiKey) return respond({ error: "AI recommendations need the GEMINI_API_KEY secret in Supabase." }, 503);
+      const geminiResponse = await fetch("https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash-lite:generateContent", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "x-goog-api-key": geminiKey },
+        body: JSON.stringify({
+          systemInstruction: { parts: [{ text: "You are a movie recommendation engine. The user asks for movies based on a mood, theme, or preference. Return only a compact JSON object with exactly two fields: summary, a friendly answer of one short sentence (max 25 words), and movies, an array of real feature films with no more than 20 items. Return up to 20 suitable movies, never more than 20. Each movie must have only title and year. Do not include reasons, descriptions, markdown, or any other fields. Choose films that fit the request; never invent titles. If the prompt is narrow, return fewer relevant movies rather than padding the list." }] },
+          contents: [{ role: "user", parts: [{ text: prompt }] }],
+          generationConfig: {
+            responseMimeType: "application/json",
+            responseSchema: {
+              type: "OBJECT",
+              properties: {
+                summary: { type: "STRING" },
+                movies: {
+                  type: "ARRAY",
+                  maxItems: 20,
+                  items: {
+                    type: "OBJECT",
+                    properties: { title: { type: "STRING" }, year: { type: "STRING" } },
+                    required: ["title", "year"],
+                  },
+                },
+              },
+              required: ["summary", "movies"],
+            },
+            thinkingConfig: { thinkingLevel: "minimal" },
+            maxOutputTokens: 900,
+          },
+        }),
+      });
+      if (!geminiResponse.ok) {
+        const errorBody = await geminiResponse.json().catch(() => ({}));
+        const providerMessage = typeof errorBody?.error?.message === "string" ? errorBody.error.message.slice(0, 240) : "";
+        console.error("Gemini recommendation request failed", geminiResponse.status, providerMessage);
+        const message = geminiResponse.status === 429
+          ? "Gemini is busy right now. Try again in a little while."
+          : geminiResponse.status === 400
+            ? "Gemini rejected the request settings. Check the deployed recommendation function and try again."
+            : geminiResponse.status === 401 || geminiResponse.status === 403
+              ? "Gemini rejected its API key. Check GEMINI_API_KEY in Supabase Edge Function secrets."
+              : "Gemini could not create recommendations right now.";
+        return respond({ error: message }, 502);
+      }
+      const generated = await geminiResponse.json();
+      const candidate = generated.candidates?.[0];
+      const generatedText = (candidate?.content?.parts ?? []).map((part: any) => part.text ?? "").join("").trim();
+      const recommendation = parseGeminiRecommendation(generatedText);
+      if (!recommendation) {
+        console.error("Gemini returned no usable recommendation", candidate?.finishReason ?? generated.promptFeedback?.blockReason ?? "empty response");
+        return respond({ error: candidate?.finishReason === "SAFETY" || generated.promptFeedback?.blockReason
+          ? "Gemini couldn’t answer that prompt. Try describing a movie mood or theme."
+          : "Gemini returned an incomplete recommendation. Please try again." }, 502);
+      }
+      const suggestions = recommendation.recommendations.slice(0, 20);
+      const results = (await Promise.all(suggestions.map(async (suggestion: any) => {
+        const title = typeof suggestion?.title === "string" ? suggestion.title.trim().slice(0, 100) : "";
+        if (!title) return null;
+        const year = validYear(suggestion.year);
+        const search = await tmdb(`/search/movie?query=${encodeURIComponent(title)}&include_adult=false&language=en-US&page=1${year ? `&year=${year}` : ""}`, token);
+        const matches = (search.results ?? []).filter((movie: any) => normalizeTitle(movie.title ?? movie.original_title ?? "") === normalizeTitle(title));
+        const match = matches.find((movie: any) => !year || !movie.release_date || Number(movie.release_date.slice(0, 4)) === year) ?? matches[0];
+        return match ? { ...match, id: Number(match.id), tmdbId: Number(match.id) } : null;
+      }))).filter(Boolean);
+      const payload = {
+        summary: typeof recommendation.summary === "string" ? recommendation.summary.slice(0, 240) : "Here are a few movies that fit your mood.",
+        results,
+      };
+      await writeDailyCache(cacheKey, today, payload).catch((error) => console.error("daily Gemini recommendation cache write failed", error));
+      return respond({ ...payload, cacheHit: false });
+    }
     if (action === "movie-detail") {
       let movieId = parseTmdbMovieId(body.movieId);
       if (!movieId && typeof body.title === "string" && body.title.trim()) {
@@ -145,15 +238,7 @@ Deno.serve(async (request: Request) => {
       }
       const keyword = typeof filters.keyword === "string" ? filters.keyword.trim().slice(0, 60) : "";
       if (keyword) {
-        const keywordCacheKey = `discover-keyword-v1:${normalizeTitle(keyword)}`;
-        let keywordMatch = await readDailyCache(keywordCacheKey, today).catch(() => null);
-        if (!keywordMatch) {
-          const keywordResults = await tmdb(`/search/keyword?query=${encodeURIComponent(keyword)}&page=1`, token);
-          const matches = keywordResults.results ?? [];
-          const exact = matches.find((match: any) => normalizeTitle(match.name ?? "") === normalizeTitle(keyword));
-          keywordMatch = exact ?? matches[0] ?? null;
-          if (keywordMatch) await writeDailyCache(keywordCacheKey, today, keywordMatch).catch((error) => console.error("daily discover keyword cache write failed", error));
-        }
+        const keywordMatch = await resolveKeyword(keyword, token, today);
         if (!keywordMatch?.id) return respond({ results: [], page, totalPages: 1, region, keywordNotFound: true });
         params.set("with_keywords", String(keywordMatch.id));
       }
@@ -244,14 +329,31 @@ Deno.serve(async (request: Request) => {
     }
     if (action !== "home") return respond({ error: "Unknown action." }, 400);
 
-    const [trending, popular] = await Promise.all([
+    const requestedMonth = Number(body.month);
+    const month = Number.isInteger(requestedMonth) && requestedMonth >= 1 && requestedMonth <= 12 ? requestedMonth : new Date().getMonth() + 1;
+    const theme = MONTHLY_THEMES[month - 1];
+    const today = new Date().toISOString().slice(0, 10);
+    const [trending, keywordMatch] = await Promise.all([
       tmdb("/trending/movie/week?language=en-US", token),
-      tmdb("/movie/popular?language=en-US&page=1", token),
+      resolveKeyword(theme.keyword, token, today),
     ]);
+    let themedMovies: any[] = [];
+    if (keywordMatch?.id) {
+      const params = new URLSearchParams({ include_adult: "false", include_video: "false", language: "en-US", page: "1", sort_by: "popularity.desc", "vote_count.gte": "10" });
+      params.set("with_keywords", String(keywordMatch.id));
+      const themeCacheKey = `discover-v1:${params.toString()}`;
+      const cached = await readDailyCache(themeCacheKey, today).catch(() => null);
+      if (cached) themedMovies = cached.results ?? [];
+      else {
+        const themed = await tmdb(`/discover/movie?${params.toString()}`, token);
+        themedMovies = themed.results ?? [];
+        await writeDailyCache(themeCacheKey, today, { results: themedMovies, page: 1, totalPages: Math.min(500, Number(themed.total_pages ?? 1)), region: "US", cacheHit: false }).catch((error) => console.error("daily monthly theme cache write failed", error));
+      }
+    }
     return respond({
       shelves: [
         { title: "Trending this week", movies: trending.results ?? [] },
-        { title: "Popular movies", movies: popular.results ?? [] },
+        { title: `${theme.month} · ${theme.title}`, theme: month, movies: themedMovies },
       ],
     });
   } catch (error) {
@@ -297,6 +399,53 @@ async function readDailyCache(cacheKey: string, today: string) {
   if (!response.ok) throw new Error("Could not read the daily streaming cache.");
   const rows = await response.json();
   return rows[0]?.payload ?? null;
+}
+
+function parseGeminiRecommendation(text: string): { summary: string; recommendations: any[] } | null {
+  if (!text) return null;
+  const candidates = [text.replace(/^```(?:json)?\s*/i, "").replace(/\s*```$/, "").trim()];
+  const firstBrace = text.indexOf("{");
+  const lastBrace = text.lastIndexOf("}");
+  if (firstBrace >= 0 && lastBrace > firstBrace) candidates.push(text.slice(firstBrace, lastBrace + 1));
+  for (const candidate of candidates) {
+    try {
+      const parsed = JSON.parse(candidate);
+      if (!parsed || typeof parsed !== "object") continue;
+      const raw = parsed.movies ?? parsed.recommendations ?? parsed.results;
+      if (!Array.isArray(raw)) continue;
+      const recommendations = raw.map((item: any) => typeof item === "string"
+        ? { title: item, year: null }
+        : item && typeof item === "object"
+          ? { title: item.title ?? item.name, year: item.year ?? null }
+          : null).filter((item: any) => typeof item?.title === "string" && item.title.trim());
+      if (!recommendations.length) continue;
+      return {
+        summary: typeof parsed.summary === "string" ? parsed.summary : typeof parsed.answer === "string" ? parsed.answer : "Here are a few movies that fit your mood.",
+        recommendations,
+      };
+    } catch {
+      // Try the next extracted JSON candidate, including fenced model output.
+    }
+  }
+  return null;
+}
+
+async function sha256Hex(value: string) {
+  const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(value));
+  return [...new Uint8Array(digest)].map((byte) => byte.toString(16).padStart(2, "0")).join("");
+}
+
+async function resolveKeyword(keyword: string, token: string, today: string) {
+  const keywordCacheKey = `discover-keyword-v1:${normalizeTitle(keyword)}`;
+  let keywordMatch = await readDailyCache(keywordCacheKey, today).catch(() => null);
+  if (!keywordMatch) {
+    const keywordResults = await tmdb(`/search/keyword?query=${encodeURIComponent(keyword)}&page=1`, token);
+    const matches = keywordResults.results ?? [];
+    const exact = matches.find((match: any) => normalizeTitle(match.name ?? "") === normalizeTitle(keyword));
+    keywordMatch = exact ?? matches[0] ?? null;
+    if (keywordMatch) await writeDailyCache(keywordCacheKey, today, keywordMatch).catch((error) => console.error("daily discover keyword cache write failed", error));
+  }
+  return keywordMatch;
 }
 
 async function writeDailyCache(cacheKey: string, today: string, payload: unknown) {
