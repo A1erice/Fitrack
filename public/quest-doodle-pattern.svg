@@ -1,0 +1,45 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="240" height="240" viewBox="0 0 240 240" fill="none">
+  <g stroke="#6D4BA0" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+    <!-- Clapperboard -->
+    <g transform="translate(20 18) rotate(-9 24 19)">
+      <rect x="2" y="13" width="44" height="29" rx="4"/>
+      <path d="M3 13 7 4l10 4-3 5m3-5 10 4-3 5m3-5 10 4-3 5m3-5 10 4-3 5M12 24h8m-8 7h19"/>
+    </g>
+    <!-- Ticket -->
+    <g transform="translate(170 20) rotate(12 18 13)">
+      <path d="M3 3h31a5 5 0 0 1 5 5v5a5 5 0 0 0 0 10v5a5 5 0 0 1-5 5H3a5 5 0 0 1-5-5v-5a5 5 0 0 0 0-10V8a5 5 0 0 1 5-5Z"/>
+      <path d="M14 5v4m0 4v4m0 4v4m0 4v3M21 12l8 5-8 5z"/>
+    </g>
+    <!-- Popcorn -->
+    <g transform="translate(90 74) rotate(-5 20 24)">
+      <path d="m7 17 5 33h25l5-33H7Z"/>
+      <path d="m12 19 5 29m5-29v29m6-29-2 29m7-29-6 29M13 15c-5-6 2-10 7-5 0-8 11-8 12 0 7-4 12 4 7 9H13"/>
+      <path d="M18 6V2m12 3 3-4M9 9 6 6"/>
+    </g>
+    <!-- Wand and sparkles -->
+    <g transform="translate(24 119) rotate(-34 24 18)">
+      <path d="m5 35 35-29 4 5L9 40zM35 5l2-4m7 9 5-1M30 2l-1-4"/>
+      <path d="M13 8v-7m-4 3h8m31 22v-7m-4 3h8"/>
+    </g>
+    <!-- Open story book -->
+    <g transform="translate(165 108) rotate(7 25 20)">
+      <path d="M2 7c10-4 18-2 23 3v31C19 35 11 34 2 38V7Zm46 0c-10-4-18-2-23 3v31c6-6 14-7 23-3V7Z"/>
+      <path d="M8 14c5-1 9 0 12 2m-12 5c5-1 9 0 12 2m12-7c3-2 7-3 12-2m-12 9c3-2 7-3 12-2"/>
+    </g>
+    <!-- Stars -->
+    <path d="m76 22 3 8 8 3-8 3-3 8-3-8-8-3 8-3 3-8Zm100 73 2 6 6 2-6 2-2 6-2-6-6-2 6-2 2-6ZM46 206l2 5 5 2-5 2-2 5-2-5-5-2 5-2 2-5Z"/>
+    <!-- Little dragon silhouette -->
+    <g transform="translate(21 182) rotate(-8 25 21)">
+      <path d="M7 35c-2-8 2-13 10-15l-5-9 12 5c4-5 11-7 18-4l-4 7 9 5-10 2c-2 8-8 12-17 10l-8 6 1-8-6 1Z"/>
+      <path d="m26 16 3-8 5 7m6 4 5-5m-24 15 7 1"/>
+      <circle cx="34" cy="20" r="1" fill="#6D4BA0"/>
+    </g>
+    <!-- Film reel -->
+    <g transform="translate(112 174)">
+      <circle cx="22" cy="22" r="19"/><circle cx="22" cy="22" r="4"/>
+      <circle cx="22" cy="11" r="3.5"/><circle cx="32" cy="22" r="3.5"/><circle cx="22" cy="33" r="3.5"/><circle cx="12" cy="22" r="3.5"/>
+    </g>
+    <!-- Looping heart accent -->
+    <path d="M74 153c-8-10-23 1-10 13l10 9 10-9c13-12-2-23-10-13Zm107 57c-6-7-16 1-7 10l7 7 7-7c9-9-1-17-7-10Z"/>
+  </g>
+</svg>

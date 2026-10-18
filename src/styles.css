@@ -289,10 +289,8 @@ html:has(.app-main.page-home),html:has(.app-main.page-watchlist),html:has(.app-m
 .page-watchlist .quest-screen-title .count-badge{background:#ffffff2d;color:white;border:1px solid #ffffff50}
 .page-watchlist .page-content{isolation:isolate}
 .page-watchlist .page-content>*:not(.quest-wallpaper){position:relative;z-index:1}
-.quest-wallpaper{position:absolute;inset:-22px -22px 0;z-index:0;display:grid;grid-template-columns:repeat(auto-fill,minmax(34px,1fr));grid-auto-rows:44px;justify-items:center;align-content:start;overflow:hidden;pointer-events:none;color:#73569a;opacity:.2;animation:quest-wallpaper-drift 8s ease-in-out infinite alternate}
-.quest-wallpaper span{display:grid;place-items:center;width:100%;height:100%;font-size:19px;line-height:1;opacity:.64;animation:quest-icon-float 2.8s ease-in-out infinite alternate;animation-delay:var(--icon-delay,0s)}
-@keyframes quest-wallpaper-drift{from{translate:-3px 0}to{translate:3px 0}}
-@keyframes quest-icon-float{from{transform:translateY(-2px) rotate(-4deg);opacity:.4}to{transform:translateY(2px) rotate(4deg);opacity:.8}}
+.quest-wallpaper{position:absolute;inset:-22px -22px 0;z-index:0;overflow:hidden;pointer-events:none;background-image:url('/quest-doodle-pattern.svg');background-size:240px 240px;background-repeat:repeat;opacity:.23;animation:quest-wallpaper-drift 4.5s linear infinite}
+@keyframes quest-wallpaper-drift{from{background-position:0 0}to{background-position:0 240px}}
 .page-watchlist .bulk-action{position:relative;z-index:1;flex:none;padding:8px 9px;background:#ffffffed;color:#73559e;font-size:8px;box-shadow:0 3px 8px #39225120}
 .page-watchlist .quest-scroll-hint{padding:5px 2px;color:#9789aa}
 .page-watchlist .quest-row-main{background:#fbf9fe}
