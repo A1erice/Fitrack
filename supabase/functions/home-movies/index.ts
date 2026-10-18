@@ -37,7 +37,7 @@ Deno.serve(async (request: Request) => {
       const prompt = typeof body.prompt === "string" ? body.prompt.trim().slice(0, 300) : "";
       if (!prompt) return respond({ error: "Describe the kind of movie you want." }, 400);
       const today = new Date().toISOString().slice(0, 10);
-      const cacheKey = `gemini-recommend-v4:${await sha256Hex(prompt.toLocaleLowerCase())}`;
+      const cacheKey = `gemini-recommend-v5:${await sha256Hex(prompt.toLocaleLowerCase())}`;
       const cached = await readDailyCache(cacheKey, today).catch(() => null);
       if (cached) return respond({ ...cached, cacheHit: true });
 
@@ -47,7 +47,7 @@ Deno.serve(async (request: Request) => {
         method: "POST",
         headers: { "Content-Type": "application/json", "x-goog-api-key": geminiKey },
         body: JSON.stringify({
-          systemInstruction: { parts: [{ text: "You are a movie recommendation engine. The user asks for movies based on a mood, theme, or preference. Return only a compact JSON object with exactly two fields: summary, a friendly answer of one short sentence (max 25 words), and movies, an array of real feature films with no more than 20 items. Return up to 20 suitable movies, never more than 20. Each movie must have only title and year. Do not include reasons, descriptions, markdown, or any other fields. Choose films that fit the request; never invent titles. If the prompt is narrow, return fewer relevant movies rather than padding the list." }] },
+          systemInstruction: { parts: [{ text: "You are a movie recommendation engine. The user asks for movies based on a mood, theme, or preference. Return only a compact JSON object with exactly two fields: summary, a friendly answer of one short sentence (max 25 words), and movies, an array of real feature films with no more than 20 items. Return exactly 20 suitable movies whenever possible. For a narrow prompt, broaden to closely related movies that still fit the user's mood rather than stopping at 5 or padding with unrelated titles. Return fewer than 20 only when fewer suitable real feature films exist. Each movie must have only title and year. Do not include reasons, descriptions, markdown, or any other fields. Choose films that fit the request; never invent titles." }] },
           contents: [{ role: "user", parts: [{ text: prompt }] }],
           generationConfig: {
             responseMimeType: "application/json",
@@ -68,7 +68,7 @@ Deno.serve(async (request: Request) => {
               required: ["summary", "movies"],
             },
             thinkingConfig: { thinkingLevel: "minimal" },
-            maxOutputTokens: 900,
+            maxOutputTokens: 1400,
           },
         }),
       });
