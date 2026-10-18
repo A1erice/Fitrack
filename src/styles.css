@@ -596,6 +596,8 @@ html:has(.app-main.page-home),html:has(.app-main.page-watchlist),html:has(.app-m
 .with-icon-pattern>*{position:relative;z-index:1}
 .page-home .search-results.with-icon-pattern>.movie-row-wrap{background:rgba(244,239,249,.88)}
 .page-lists .list-stack.with-icon-pattern>.movie-row-wrap{background:rgba(244,239,249,.86)}
+.shelf-pattern,.theme-browser-pattern,.with-icon-pattern::before{display:none!important}
+.with-icon-pattern{background:transparent}
 @keyframes movie-list-pattern-drift{from{transform:translate3d(-24px,-14px,0)}to{transform:translate3d(26px,18px,0)}}
 @media(prefers-reduced-motion:reduce){.with-icon-pattern::before,.shelf-pattern,.theme-browser-pattern{animation:none;will-change:auto}}
 .movie-modal{transition:transform .2s ease-out;touch-action:pan-y}
