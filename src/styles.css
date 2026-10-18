@@ -287,6 +287,12 @@ html:has(.app-main.page-home),html:has(.app-main.page-watchlist),html:has(.app-m
 .page-watchlist .quest-screen-title h1{margin:0;color:white;font-size:24px;letter-spacing:-.3px}
 .page-watchlist .quest-screen-title p{color:#f0e8f8;font-size:10px}
 .page-watchlist .quest-screen-title .count-badge{background:#ffffff2d;color:white;border:1px solid #ffffff50}
+.page-watchlist .page-content{isolation:isolate}
+.page-watchlist .page-content>*:not(.quest-wallpaper){position:relative;z-index:1}
+.quest-wallpaper{position:absolute;inset:-22px -22px 0;z-index:0;display:grid;grid-template-columns:repeat(auto-fill,minmax(34px,1fr));grid-auto-rows:44px;justify-items:center;align-content:start;overflow:hidden;pointer-events:none;color:#73569a;opacity:.2;animation:quest-wallpaper-drift 18s ease-in-out infinite alternate}
+.quest-wallpaper span{display:grid;place-items:center;width:100%;height:100%;font-size:19px;line-height:1;opacity:.64;animation:quest-icon-float 5.5s ease-in-out infinite alternate;animation-delay:var(--icon-delay,0s)}
+@keyframes quest-wallpaper-drift{from{translate:-3px 0}to{translate:3px 0}}
+@keyframes quest-icon-float{from{transform:translateY(-2px) rotate(-4deg);opacity:.4}to{transform:translateY(2px) rotate(4deg);opacity:.8}}
 .page-watchlist .bulk-action{position:relative;z-index:1;flex:none;padding:8px 9px;background:#ffffffed;color:#73559e;font-size:8px;box-shadow:0 3px 8px #39225120}
 .page-watchlist .quest-scroll-hint{padding:5px 2px;color:#9789aa}
 .page-watchlist .quest-row-main{background:#fbf9fe}
@@ -599,7 +605,7 @@ html:has(.app-main.page-home),html:has(.app-main.page-watchlist),html:has(.app-m
 .shelf-pattern,.theme-browser-pattern,.with-icon-pattern::before{display:none!important}
 .with-icon-pattern{background:transparent}
 @keyframes movie-list-pattern-drift{from{transform:translate3d(-24px,-14px,0)}to{transform:translate3d(26px,18px,0)}}
-@media(prefers-reduced-motion:reduce){.with-icon-pattern::before,.shelf-pattern,.theme-browser-pattern{animation:none;will-change:auto}}
+@media(prefers-reduced-motion:reduce){.with-icon-pattern::before,.shelf-pattern,.theme-browser-pattern,.quest-wallpaper,.quest-wallpaper span{animation:none;will-change:auto}}
 .movie-modal{transition:transform .2s ease-out;touch-action:pan-y}
 .movie-modal.is-pulling{transition:none;will-change:transform}
 
