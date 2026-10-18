@@ -36,8 +36,12 @@ Deno.serve(async (request: Request) => {
     if (action === "recommend") {
       const prompt = typeof body.prompt === "string" ? body.prompt.trim().slice(0, 300) : "";
       if (!prompt) return respond({ error: "Describe the kind of movie you want." }, 400);
+      const watchedTitles = Array.isArray(body.watchedTitles)
+        ? body.watchedTitles.filter((title: unknown): title is string => typeof title === "string").slice(0, 10).map((title: string) => title.trim().slice(0, 100)).filter(Boolean)
+        : [];
+      const watchedContext = watchedTitles.length ? `\n\nThe user's recently watched movies are: ${watchedTitles.join("; ")}. Use these only as taste signals: avoid recommending titles already watched, and find other movies with a similar tone, genres, themes, or storytelling.` : "";
       const today = new Date().toISOString().slice(0, 10);
-      const cacheKey = `gemini-recommend-v5:${await sha256Hex(prompt.toLocaleLowerCase())}`;
+      const cacheKey = `gemini-recommend-v7:${await sha256Hex(`${prompt.toLocaleLowerCase()}|${watchedTitles.join("|").toLocaleLowerCase()}`)}`;
       const cached = await readDailyCache(cacheKey, today).catch(() => null);
       if (cached) return respond({ ...cached, cacheHit: true });
 
@@ -47,8 +51,8 @@ Deno.serve(async (request: Request) => {
         method: "POST",
         headers: { "Content-Type": "application/json", "x-goog-api-key": geminiKey },
         body: JSON.stringify({
-          systemInstruction: { parts: [{ text: "You are a movie recommendation engine. The user asks for movies based on a mood, theme, or preference. Return only a compact JSON object with exactly two fields: summary, a friendly answer of one short sentence (max 25 words), and movies, an array of real feature films with no more than 20 items. Return exactly 20 suitable movies whenever possible. For a narrow prompt, broaden to closely related movies that still fit the user's mood rather than stopping at 5 or padding with unrelated titles. Return fewer than 20 only when fewer suitable real feature films exist. Each movie must have only title and year. Do not include reasons, descriptions, markdown, or any other fields. Choose films that fit the request; never invent titles." }] },
-          contents: [{ role: "user", parts: [{ text: prompt }] }],
+          systemInstruction: { parts: [{ text: "You are a movie recommendation engine. The user asks for movies based on a mood, theme, or preference, optionally informed by watched movie taste context. Return only a compact JSON object with exactly two fields: summary, a helpful explanation of one or two sentences (35 to 50 words, max 50), and movies, an array of real feature films with no more than 20 items. Return exactly 20 suitable movies whenever possible. For a narrow prompt, broaden to closely related movies that still fit the user's mood rather than stopping at 5 or padding with unrelated titles. Return fewer than 20 only when fewer suitable real feature films exist. Each movie must have only title and year. Do not include reasons, descriptions, markdown, or any other fields. Choose films that fit the request; never invent titles." }] },
+          contents: [{ role: "user", parts: [{ text: `${prompt}${watchedContext}` }] }],
           generationConfig: {
             responseMimeType: "application/json",
             responseSchema: {
@@ -106,7 +110,7 @@ Deno.serve(async (request: Request) => {
         return match ? { ...match, id: Number(match.id), tmdbId: Number(match.id) } : null;
       }))).filter(Boolean);
       const payload = {
-        summary: typeof recommendation.summary === "string" ? recommendation.summary.slice(0, 240) : "Here are a few movies that fit your mood.",
+        summary: typeof recommendation.summary === "string" ? recommendation.summary.slice(0, 400) : "Here are a few movies that fit your mood.",
         results,
       };
       await writeDailyCache(cacheKey, today, payload).catch((error) => console.error("daily Gemini recommendation cache write failed", error));
@@ -217,7 +221,8 @@ Deno.serve(async (request: Request) => {
       const blockedGenres = Array.isArray(filters.blacklistGenres)
         ? [...new Set(filters.blacklistGenres.filter((genre: unknown): genre is string => typeof genre === "string" && /^\d{1,3}$/.test(genre)).slice(0, 20))]
         : [];
-      if (blockedGenres.length) params.set("without_genres", blockedGenres.join("|"));
+      const excludedGenres = [...new Set([...blockedGenres, "10770"])]; // Exclude TV movies from the Discover feed.
+      params.set("without_genres", excludedGenres.join("|"));
       const yearFrom = validYear(filters.yearFrom);
       const yearTo = validYear(filters.yearTo);
       if (yearFrom) params.set("primary_release_date.gte", `${yearFrom}-01-01`);
@@ -225,9 +230,9 @@ Deno.serve(async (request: Request) => {
       const minimumRating = validDecimal(filters.minimumRating, 0, 10);
       if (minimumRating !== null) params.set("vote_average.gte", String(minimumRating));
       params.set("vote_count.gte", minimumRating !== null ? "50" : "10");
+      params.set("with_runtime.gte", filters.runtime === "feature" ? "91" : filters.runtime === "long" ? "151" : "40");
       if (filters.runtime === "short") params.set("with_runtime.lte", "90");
-      if (filters.runtime === "feature") { params.set("with_runtime.gte", "91"); params.set("with_runtime.lte", "150"); }
-      if (filters.runtime === "long") params.set("with_runtime.gte", "151");
+      if (filters.runtime === "feature") params.set("with_runtime.lte", "150");
       const language = typeof filters.language === "string" && /^[a-z]{2,3}$/i.test(filters.language) ? filters.language.toLowerCase() : "";
       if (language) params.set("with_original_language", language);
       const provider = Number(filters.provider);
