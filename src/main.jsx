@@ -52,8 +52,10 @@ const browseThemes = [
 ];
 const themeBrowserPattern = [...browseThemes].sort(() => Math.random() - 0.5).slice(0, 22).map(theme => theme.icon).join('   ✦   ').repeat(2);
 const buildMovieListPattern = (icon) => Array.from({ length: 900 }, (_, index) => index % 4 === 0 ? icon : index % 2 === 0 ? '✦' : '✧').join('   ');
-const questLogIcons = ['📜', '⚔️', '🏰', '✨', '🛡️', '🌙', '🗝️', '⭐', '🧭', '🪄'];
-const questLogPattern = Array.from({ length: 320 }, () => questLogIcons[Math.floor(Math.random() * questLogIcons.length)]);
+// A deliberate repeating mix ties the Quest Log wallpaper to movies and its
+// fantasy-adventure styling without looking like an unrelated emoji scatter.
+const questLogIcons = ['🎬', '🎟️', '🍿', '📜', '🧭', '⚔️', '🏰', '🐉', '✨', '⭐', '🗝️', '🎞️'];
+const questLogPattern = Array.from({ length: 320 }, (_, index) => questLogIcons[(index * 5 + Math.floor(index / 7)) % questLogIcons.length]);
 
 const films = [
   { id: 1, tmdbId: 120, title: 'The Lord of the Rings: The Fellowship of the Ring', year: 2001, genre: 'Fantasy · Adventure', runtime: '2h 58m', rating: '8.9', image: 'https://image.tmdb.org/t/p/w780/6oom5QYQ2yQTMJIbnvbkBL9cHo6.jpg', shots: ['https://image.tmdb.org/t/p/w780/6oom5QYQ2yQTMJIbnvbkBL9cHo6.jpg','https://image.tmdb.org/t/p/w780/1PN9ij2S2D5R8P6S8cXdY7h6lR3.jpg','https://image.tmdb.org/t/p/w780/bxVxZb5O9OxCO0oRUNdCnpy9NST.jpg'], tone: 'green', tags: ['Epic quest', 'Found family', 'Magic'] },
@@ -69,6 +71,7 @@ const navItems = [
   { id: 'home', label: 'Home', icon: House }, { id: 'discover', label: 'Discover', icon: Compass }, { id: 'watchlist', label: 'Quest log', icon: ScrollText, center: true }, { id: 'lists', label: 'Collections', icon: LibraryBig }, { id: 'more', label: 'More', icon: CircleEllipsis },
 ];
 const releaseNotes = [
+  { version: '1.0.7', title: 'A steadier Discover and Quest Log', details: ['Kept Discover on the same movie after Safari suspends or restores the app, waiting for account preferences before refreshing its feed.', 'Replaced the Quest Log wallpaper’s random symbols with movie and fantasy-adventure icons, and made the animation faster.'] },
   { version: '1.0.6', title: 'Quest Log as home base', details: ['Opened Fitrack to the Quest Log by default.', 'Added an animated icon wallpaper across the full Quest Log tab, with even coverage to the edges and reduced-motion support.', 'Kept the Discover queue and filters when returning to the tab or resuming the app.'] },
   { version: '1.0.5', title: 'Clearer collection movie rows', details: ['Removed the decorative icon wallpaper from movie lists.', 'Restored a soft background to each collection movie item while keeping the list area transparent.'] },
   { version: '1.0.4', title: 'More dependable movie lists', details: ['Kept the AI recommendation button visible beside its expanding prompt.', 'Filled icon patterns across themed movie lists and sorted collections and movie history newest-first.', 'Kept Discover selections stable while leaving the app and removed the redundant collection-save progress message.'] },
@@ -127,13 +130,24 @@ const mapTmdbMovie = (movie) => {
 const mapExpiringMovie = (movie) => ({ ...movie, id: `expiring-${movie.id}`, rating: '', ratingLabel: '', hideRating: true, isExpiring: true });
 const readDiscoverSnapshot = () => {
   try {
-    const saved = JSON.parse(sessionStorage.getItem('fitrack-discover-snapshot') || 'null');
+    const saved = JSON.parse(localStorage.getItem('fitrack-discover-snapshot') || sessionStorage.getItem('fitrack-discover-snapshot') || 'null');
     return saved && Array.isArray(saved.queue) ? saved : null;
   } catch { return null; }
 };
+const persistDiscoverSnapshot = (snapshot) => {
+  try {
+    const serialized = JSON.stringify(snapshot);
+    localStorage.setItem('fitrack-discover-snapshot', serialized);
+    sessionStorage.setItem('fitrack-discover-snapshot', serialized);
+  } catch { /* Keep the in-memory Discover feed if browser storage is unavailable. */ }
+};
 function App() {
   const initialDiscoverSnapshot = useRef(readDiscoverSnapshot()).current;
-  const [page, setPage] = useState('watchlist');
+  // Keep the requested default tab for a fresh visit, but restore Discover if
+  // Safari discarded the app while the user was browsing its current queue.
+  const [page, setPage] = useState(() => initialDiscoverSnapshot?.page === 'discover' ? 'discover' : 'watchlist');
+  const pageRef = useRef(page);
+  pageRef.current = page;
   const [authUser, setAuthUser] = useState(null);
   const [authLoading, setAuthLoading] = useState(true);
   const [profile, setProfile] = useState(null);
@@ -151,6 +165,8 @@ function App() {
   const [watchlistLoading, setWatchlistLoading] = useState(false);
   const [watchlistError, setWatchlistError] = useState('');
   const [discoverQueue, setDiscoverQueue] = useState(() => initialDiscoverSnapshot?.queue || []);
+  const discoverQueueRef = useRef(initialDiscoverSnapshot?.queue || []);
+  discoverQueueRef.current = discoverQueue;
   const [discoverPassRows, setDiscoverPassRows] = useState([]);
   const [discoverLoading, setDiscoverLoading] = useState(false);
   const [discoverError, setDiscoverError] = useState('');
@@ -244,6 +260,7 @@ function App() {
   const blockedEdgeOrigin = useRef(null);
   const movieDetailRequest = useRef(0);
   const discoverSwipeStart = useRef(null);
+  const discoverActionTimeout = useRef(null);
   const discoverWasSwiped = useRef(false);
   const discoverSeenIds = useRef(new Set([...(initialDiscoverSnapshot?.seen || []), ...(initialDiscoverSnapshot?.queue || []).map(movie => String(movie.id))]));
   const discoverNextPage = useRef(0);
@@ -252,25 +269,52 @@ function App() {
   const discoverGeneration = useRef(0);
   const discoverPageActive = useRef(false);
   const discoverInputSignature = useRef(initialDiscoverSnapshot?.signature || '');
+  const discoverFiltersRef = useRef(initialDiscoverSnapshot?.filters || emptyDiscoverFilters);
+  discoverFiltersRef.current = discoverFilters;
   const questSwipeStart = useRef(null);
   const discoverLocked = useRef(false);
   const suppressMovieClick = useRef(false);
   useEffect(() => {
     try {
-      sessionStorage.setItem('fitrack-discover-snapshot', JSON.stringify({ queue: discoverQueue, seen: [...discoverSeenIds.current], signature: discoverInputSignature.current, filters: discoverFilters }));
+      persistDiscoverSnapshot({ page, queue: discoverQueue, seen: [...discoverSeenIds.current], signature: discoverInputSignature.current, filters: discoverFilters });
     } catch { /* Keep the in-memory Discover queue if browser storage is unavailable. */ }
-  }, [discoverQueue, discoverFilters]);
+  }, [page, discoverQueue, discoverFilters]);
+  useEffect(() => {
+    const saveDiscoverBeforeSuspend = () => persistDiscoverSnapshot({ page: pageRef.current, queue: discoverQueueRef.current, seen: [...discoverSeenIds.current], signature: discoverInputSignature.current, filters: discoverFiltersRef.current });
+    const onSuspend = () => {
+      if (discoverActionTimeout.current !== null) {
+        window.clearTimeout(discoverActionTimeout.current);
+        discoverActionTimeout.current = null;
+        discoverLocked.current = false;
+        setDiscoverOffset(0);
+        setDiscoverOffsetY(0);
+        setDiscoverExit('');
+      }
+      saveDiscoverBeforeSuspend();
+    };
+    const onVisibilityChange = () => { if (document.visibilityState === 'hidden') onSuspend(); };
+    document.addEventListener('visibilitychange', onVisibilityChange);
+    window.addEventListener('pagehide', onSuspend);
+    window.addEventListener('beforeunload', onSuspend);
+    return () => {
+      document.removeEventListener('visibilitychange', onVisibilityChange);
+      window.removeEventListener('pagehide', onSuspend);
+      window.removeEventListener('beforeunload', onSuspend);
+    };
+  }, []);
   useEffect(() => {
     if (!supabase) { setAuthLoading(false); return; }
     let active = true;
     supabase.auth.getSession().then(({ data, error }) => {
       if (!active) return;
       if (error) setAuthError(error.message);
+      setProfileLoading(Boolean(data.session?.user));
       setAuthUser(data.session?.user || null);
       setAuthLoading(false);
     });
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       if (!active) return;
+      setProfileLoading(Boolean(session?.user));
       setAuthUser(session?.user || null);
       setProfile(null);
       setMovieBlacklist(emptyMovieBlacklist);
@@ -1003,6 +1047,7 @@ function App() {
       discoverNextPage.current = 0;
       discoverHasMore.current = true;
       if (newSession) discoverSeenIds.current = new Set();
+      discoverQueueRef.current = [];
       setDiscoverQueue([]);
     }
     if (!homeApiConfigured) { setDiscoverError('Connect the movie catalog to explore movies.'); setDiscoverLoading(false); discoverBatchLock.current = false; return; }
@@ -1053,7 +1098,11 @@ function App() {
         discoverHasMore.current = true;
       }
       if (generation !== discoverGeneration.current) return;
-      setDiscoverQueue(queue => reset ? movies : [...queue, ...movies]);
+      setDiscoverQueue(queue => {
+        const nextQueue = reset ? movies : [...queue, ...movies];
+        discoverQueueRef.current = nextQueue;
+        return nextQueue;
+      });
       if (!movies.length && !keywordNotFound) setDiscoverError('No unseen movies match these filters. Try widening your choices.');
     } catch (error) {
       if (generation === discoverGeneration.current) setDiscoverError(error.message || 'Could not load recommendations.');
@@ -1065,6 +1114,9 @@ function App() {
     }
   };
   useEffect(() => {
+    // Wait until Supabase has restored the session and its profile preferences
+    // before deciding whether the saved queue still matches the active filters.
+    if (authLoading || (authUser && profileLoading)) return;
     if (page === 'discover') {
       const entering = !discoverPageActive.current;
       discoverPageActive.current = true;
@@ -1072,16 +1124,17 @@ function App() {
       const inputsChanged = discoverInputSignature.current !== inputSignature;
       discoverInputSignature.current = inputSignature;
       try {
-        sessionStorage.setItem('fitrack-discover-snapshot', JSON.stringify({ queue: discoverQueue, seen: [...discoverSeenIds.current], signature: inputSignature, filters: discoverFilters }));
+        persistDiscoverSnapshot({ page, queue: discoverQueue, seen: [...discoverSeenIds.current], signature: inputSignature, filters: discoverFilters });
       } catch { /* Keep the in-memory Discover queue if browser storage is unavailable. */ }
       if (inputsChanged && !entering) loadDiscoverBatch(true, false);
       else if (entering && !discoverQueue.length) loadDiscoverBatch(true, true);
     } else discoverPageActive.current = false;
-  }, [page, discoverFilters, movieBlacklist, homeApiConfigured, authUser?.id]);
+  }, [page, discoverFilters, movieBlacklist, homeApiConfigured, authUser?.id, authLoading, profileLoading]);
   const advanceDiscover = () => {
     setDiscoverQueue(queue => {
       const remaining = queue.slice(1);
       while (remaining.length && isDiscoverExcluded(remaining[0])) remaining.shift();
+      discoverQueueRef.current = remaining;
       return remaining;
     });
     setDiscoverOffset(0); setDiscoverOffsetY(0); setDiscoverExit('');
@@ -1100,7 +1153,11 @@ function App() {
       return;
     }
     discoverSeenIds.current.delete(String(replay.id));
-    setDiscoverQueue(queue => [replay, ...queue.filter(movie => String(movie.id) !== String(replay.id))]);
+    setDiscoverQueue(queue => {
+      const nextQueue = [replay, ...queue.filter(movie => String(movie.id) !== String(replay.id))];
+      discoverQueueRef.current = nextQueue;
+      return nextQueue;
+    });
     setLastDiscoverMovie(null);
     setDiscoverOffset(0); setDiscoverOffsetY(0); setDiscoverExit('');
     notify('Showing that movie again');
@@ -1128,14 +1185,16 @@ function App() {
     setDiscoverOffset(direction === 'left' ? -440 : direction === 'right' ? 440 : 0);
     setDiscoverOffsetY(direction === 'up' ? -560 : direction === 'down' ? 560 : 0);
     if (direction === 'down') {
-      window.setTimeout(() => {
+      discoverActionTimeout.current = window.setTimeout(() => {
+        discoverActionTimeout.current = null;
         setDiscoverOffset(0); setDiscoverOffsetY(0); setDiscoverExit('');
         openCollectionPicker(current, 'discover');
         discoverLocked.current = false;
       }, 220);
       return;
     }
-    window.setTimeout(async () => {
+    discoverActionTimeout.current = window.setTimeout(async () => {
+      discoverActionTimeout.current = null;
       let saved = true;
       if (direction === 'left') saved = await recordDiscoverPass(current);
       if (direction === 'right') saved = isFavoriteMovie(current) || await toggleFavorite(current);
